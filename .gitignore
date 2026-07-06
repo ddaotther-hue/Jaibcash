@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+*.log
+
+# Database
+data/*.db
+data/*.db-journal
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+.env.enc
+.env.key
+*.env
+*.env.enc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Termux/Android
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Backup files
+*.bak
+*.backup
