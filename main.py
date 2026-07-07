@@ -23,7 +23,25 @@ from handlers_callback import handle_callback, handle_message
 from task_creation import get_task_creation_handler, init_task_creation
 from handlers_tasks import get_task_execution_handler
 
-# تهيئة قاعدة البيانات
+# ===== خادم ويب صغير لـ Healthcheck (يُرضي Railway) =====
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def index():
+    return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
+
+@web_app.route('/health')
+def health():
+    return jsonify({"status": "ok"}), 200
+
+def run_web_server():
+    """تشغيل خادم الويب في منفذ 8000"""
+    try:
+        web_app.run(host='0.0.0.0', port=8000, debug=False, use_reloader=False)
+    except Exception as e:
+        print(f"⚠️ خادم الويب فشل: {e}")
+
+# ===== تهيئة قاعدة البيانات =====
 init_db()
 
 logging.basicConfig(
@@ -32,30 +50,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ===== خادم ويب صغير لـ Healthcheck =====
-web_app = Flask(__name__)
-
-@web_app.route('/health')
-def health():
-    return jsonify({"status": "ok"}), 200
-
-@web_app.route('/')
-def index():
-    return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
-
-def run_web_server():
-    """تشغيل خادم الويب في خيط منفصل"""
-    try:
-        web_app.run(host='0.0.0.0', port=8000, debug=False, use_reloader=False)
-    except Exception as e:
-        logger.error(f"⚠️ فشل تشغيل خادم الويب: {e}")
-
 def main():
-    # تشغيل خادم الويب في الخلفية
+    # ===== تشغيل خادم الويب في خيط منفصل (لكي لا يوقف البوت) =====
     web_thread = threading.Thread(target=run_web_server, daemon=True)
     web_thread.start()
-    logger.info("🌐 خادم الويب يعمل على المنفذ 8000")
+    logger.info("🌐 خادم الويب يعمل على المنفذ 8000 (Healthcheck)")
 
+    # ===== تشغيل البوت =====
     application = Application.builder().token(BOT_TOKEN).build()
 
     # ----- تهيئة نظام إنشاء المهام -----
@@ -67,7 +68,10 @@ def main():
         commission_rate=0.10,
     )
 
+    # ----- معالج إنشاء المهام -----
     application.add_handler(get_task_creation_handler())
+
+    # ----- معالج تنفيذ المهام -----
     application.add_handler(get_task_execution_handler())
 
     # ----- أوامر المستخدم -----
