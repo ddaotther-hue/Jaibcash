@@ -1,3 +1,5 @@
+import time
+time.sleep(5)
 import logging
 from telegram.ext import (
     Application,
