@@ -1,6 +1,6 @@
 import logging
-import time
 import threading
+import os
 from flask import Flask, jsonify
 from telegram.ext import (
     Application,
@@ -23,7 +23,7 @@ from handlers_callback import handle_callback, handle_message
 from task_creation import get_task_creation_handler, init_task_creation
 from handlers_tasks import get_task_execution_handler
 
-# ===== خادم ويب صغير لـ Healthcheck (يُرضي Railway) =====
+# ===== خادم ويب صغير لـ Railway Healthcheck =====
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -35,9 +35,10 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 def run_web_server():
-    """تشغيل خادم الويب في منفذ 8000"""
+    """تشغيل خادم الويب للمنفذ المحدد من Railway"""
+    port = int(os.environ.get("PORT", 8080))
     try:
-        web_app.run(host='0.0.0.0', port=8000, debug=False, use_reloader=False)
+        web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
     except Exception as e:
         print(f"⚠️ خادم الويب فشل: {e}")
 
@@ -51,10 +52,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def main():
-    # ===== تشغيل خادم الويب في خيط منفصل (لكي لا يوقف البوت) =====
+    # ===== تشغيل خادم الويب في خيط منفصل =====
     web_thread = threading.Thread(target=run_web_server, daemon=True)
     web_thread.start()
-    logger.info("🌐 خادم الويب يعمل على المنفذ 8000 (Healthcheck)")
+    logger.info("🌐 خادم الويب يعمل على المنفذ " + os.environ.get("PORT", "8080"))
 
     # ===== تشغيل البوت =====
     application = Application.builder().token(BOT_TOKEN).build()
@@ -68,10 +69,7 @@ def main():
         commission_rate=0.10,
     )
 
-    # ----- معالج إنشاء المهام -----
     application.add_handler(get_task_creation_handler())
-
-    # ----- معالج تنفيذ المهام -----
     application.add_handler(get_task_execution_handler())
 
     # ----- أوامر المستخدم -----
@@ -96,7 +94,7 @@ def main():
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(MessageHandler(filters.PHOTO | filters.TEXT & ~filters.COMMAND, handle_message))
 
-    logger.info("✅ JaibCash Bot يعمل الآن مع دعم كامل للإحالات والمهام...")
+    logger.info("✅ JaibCash Bot يعمل الآن...")
     application.run_polling(allowed_updates=["message", "callback_query"])
 
 if __name__ == "__main__":
