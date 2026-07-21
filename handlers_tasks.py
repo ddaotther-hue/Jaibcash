@@ -374,3 +374,31 @@ def get_task_execution_handler():
             CommandHandler("cancel", cancel_execution),
         ],
     )
+
+async def my_posted_tasks(update, context):
+    from database import get_advertiser_tasks, get_task_submission_counts
+    from i18n import t
+    from keyboards import get_tasks_menu
+
+    query = update.callback_query
+    user_id = query.from_user.id
+
+    tasks_list = get_advertiser_tasks(user_id, limit=15)
+    if not tasks_list:
+        await query.edit_message_text(t(user_id, 'tasks_my_posts_empty'), reply_markup=get_tasks_menu(user_id))
+        return
+
+    status_emoji = {'active': '🟢', 'completed': '✅', 'paused': '⏸️', 'cancelled': '❌'}
+    lines = [f"📊 {t(user_id, 'tasks_my_posts_title')}\n"]
+    for task_row in tasks_list:
+        counts = get_task_submission_counts(task_row['id'])
+        emoji = status_emoji.get(task_row['status'], '⚪')
+        lines.append(
+            f"{emoji} #{task_row['id']} - {task_row['type']} ({task_row['status']})\n"
+            f"   {t(user_id, 'task_progress', done=task_row['completed_count'], total=task_row['target_count'])}\n"
+            f"   ⏳ {counts['pending']} | ✅ {counts['approved']} | ❌ {counts['rejected']}"
+        )
+    text = "\n\n".join(lines)
+    if len(text) > 4000:
+        text = text[:4000] + "\n\n..."
+    await query.edit_message_text(text, reply_markup=get_tasks_menu(user_id))

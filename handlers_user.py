@@ -28,7 +28,7 @@ def get_reply_and_edit_methods(update):
 def get_ad_watch_buttons(uid, click_url, button_name):
     keyboard = [
         [InlineKeyboardButton(button_name, url=click_url)],
-        [InlineKeyboardButton("✅ تم المشاهدة", callback_data="ad_watched")]
+        [InlineKeyboardButton(t(uid, 'btn_watched'), callback_data="ad_watched")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -37,7 +37,7 @@ async def check_ad_cooldown(uid):
     if last_time:
         try:
             last_dt = datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S')
-            elapsed = (datetime.now() - last_dt).total_seconds()
+            elapsed = (datetime.utcnow() - last_dt).total_seconds()
             if elapsed < AD_COOLDOWN_MINUTES * 60:
                 remaining = int(AD_COOLDOWN_MINUTES * 60 - elapsed)
                 return remaining
@@ -70,7 +70,7 @@ async def watch_ad(update, context):
 
     cooldown = await check_ad_cooldown(uid)
     if cooldown > 0:
-        await reply(f"⏳ يرجى الانتظار {cooldown} ثانية قبل مشاهدة إعلان جديد.")
+        await reply(t(uid, 'ad_cooldown', seconds=cooldown))
         return
 
     ads = []
@@ -86,8 +86,14 @@ async def watch_ad(update, context):
             "rnd": int(time.time() * 1000)
         }
         response = requests.get(ad_url, params=params, timeout=10)
-        if response.status_code == 200:
-            ad_data = response.json()
+        logger.info(f"AdsGram status={response.status_code} body={response.text[:200]!r}")
+        ad_data = None
+        if response.status_code == 200 and response.text.strip():
+            try:
+                ad_data = response.json()
+            except ValueError:
+                logger.info("AdsGram: لا يوجد إعلان متاح حالياً (رد غير JSON)")
+        if ad_data is not None:
             if ad_data and isinstance(ad_data, dict):
                 ad_id = ad_data.get("id") or ad_data.get("block_id") or f"adsgram_{int(time.time())}"
                 if not is_ad_seen_recently(uid, ad_id, 'adsgram', AD_REPEAT_HOURS):
@@ -143,7 +149,7 @@ async def watch_ad(update, context):
         logger.error(f"RichAds error: {e}")
 
     if not ads:
-        await reply("📭 لا توجد إعلانات متاحة حالياً.\nجرب مجدداً خلال دقائق.")
+        await reply(t(uid, "no_ads_available"))
         return
 
     random.shuffle(ads)
@@ -155,14 +161,16 @@ async def watch_ad(update, context):
     context.user_data['ad_source'] = ad['source']
     context.user_data['ad_id'] = ad['id']
 
+    instructions = t(uid, 'ad_watch_instructions')
     if ad['source'] == 'adsgram':
         keyboard = get_ad_watch_buttons(uid, ad['click_url'], ad['button_name'])
+        full_text = f"{instructions}\n\n{ad['text_html']}"
         if ad['image_url']:
-            await reply(ad['text_html'], reply_markup=keyboard, parse_mode=ParseMode.HTML, protect_content=True)
+            await reply(full_text, reply_markup=keyboard, parse_mode=ParseMode.HTML, protect_content=True)
         else:
-            await reply(ad['text_html'], reply_markup=keyboard, parse_mode=ParseMode.HTML, protect_content=True)
+            await reply(full_text, reply_markup=keyboard, parse_mode=ParseMode.HTML, protect_content=True)
     else:
-        caption = f"📢 {ad['title']}\n\n{ad['message']}"
+        caption = f"{instructions}\n\n📢 {ad['title']}\n\n{ad['message']}"
         if ad.get('bid_price'):
             caption += f"\n\n💰 السعر: ${ad['bid_price']:.2f}"
         if ad.get('brand'):
@@ -188,8 +196,7 @@ async def handle_ad_watched(update, context):
     if elapsed < MIN_AD_WATCH_TIME:
         remaining = int(MIN_AD_WATCH_TIME - elapsed)
         await query.edit_message_text(
-            f"⏳ يرجى الانتظار {remaining} ثانية إضافية لمشاهدة الإعلان بالكامل.\n"
-            f"(تم المشاهدة {int(elapsed)} ثانية من أصل {MIN_AD_WATCH_TIME})"
+            t(uid, 'ad_watch_wait', remaining=remaining, elapsed=int(elapsed), total=MIN_AD_WATCH_TIME)
         )
         return
 
@@ -508,3 +515,105 @@ async def handle_advertiser_withdraw_address(update, context):
     await context.bot.send_message(chat_id=admin_id, text=admin_msg, reply_markup=InlineKeyboardMarkup(kb), parse_mode="Markdown")
     context.user_data.pop('awaiting_advertiser_withdraw', None)
     context.user_data.pop('advertiser_withdraw_amount', None)
+
+# ===== سياسة الخصوصية =====
+async def privacy_policy(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض سياسة الخصوصية"""
+    reply_method, edit_method, user_id, chat_id = get_reply_and_edit_methods(update)
+    
+    msg = (
+        "🔒 **سياسة الخصوصية - JaibCash**\n\n"
+        "نحن في JaibCash نلتزم بحماية خصوصيتك. إليك كيفية تعاملنا مع بياناتك:\n\n"
+        "📌 **ما هي البيانات التي نجمعها؟**\n"
+        "• معرف المستخدم (User ID) في تيليجرام.\n"
+        "• اسم المستخدم واسم العرض.\n"
+        "• عنوان محفظة العملات الرقمية (عند السحب).\n"
+        "• تاريخ ووقت النشاطات (مشاهدة إعلانات، مهام، إحالات).\n\n"
+        "🔐 **كيف نستخدم بياناتك؟**\n"
+        "• لتحديد هويتك وإدارة رصيدك.\n"
+        "• لتتبع أرباحك وإحالاتك.\n"
+        "• للتواصل معك بشأن الخدمة.\n\n"
+        "🔒 **حماية البيانات:**\n"
+        "• لا نشارك بياناتك مع أي طرف ثالث.\n"
+        "• جميع البيانات مشفرة ومخزنة بأمان.\n\n"
+        "📧 **التواصل:**\n"
+        "لأي استفسار حول الخصوصية، تواصل معنا عبر @abkhali.\n\n"
+        "✅ باستخدامك للبوت، أنت توافق على هذه السياسة."
+    )
+    
+    if edit_method:
+        await edit_method(msg, parse_mode="Markdown")
+    else:
+        await reply_method(msg, parse_mode="Markdown")
+
+# ===== التواصل مع الدعم =====
+async def support(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض معلومات التواصل مع الدعم"""
+    reply_method, edit_method, user_id, chat_id = get_reply_and_edit_methods(update)
+    
+    msg = (
+        "📞 **التواصل مع الدعم**\n\n"
+        "إذا كنت بحاجة إلى مساعدة، أو لديك استفسار، أو واجهت أي مشكلة، يمكنك التواصل معنا عبر:\n\n"
+        "👤 **المشرف:** @abkhali\n"
+        "📧 **البريد الإلكتروني:** قريباً\n\n"
+        "⏳ وقت الرد: خلال 24 ساعة.\n\n"
+        "💡 **نصائح قبل التواصل:**\n"
+        "• تأكد من قراءة الأسئلة الشائعة أولاً.\n"
+        "• جهّز معرف المستخدم (User ID) لتسهيل المساعدة."
+    )
+    
+    if edit_method:
+        await edit_method(msg, parse_mode="Markdown")
+    else:
+        await reply_method(msg, parse_mode="Markdown")
+
+# ===== سياسة الخصوصية (مع ترجمة) =====
+async def privacy_policy(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض سياسة الخصوصية مع الترجمة"""
+    reply_method, edit_method, user_id, chat_id = get_reply_and_edit_methods(update)
+    
+    msg = (
+        f"🔒 **{t(user_id, 'privacy_title')}**\n\n"
+        f"{t(user_id, 'privacy_intro')}\n\n"
+        f"📌 **{t(user_id, 'privacy_data_collected')}**\n"
+        f"• {t(user_id, 'privacy_data_telegram_id')}\n"
+        f"• {t(user_id, 'privacy_data_username')}\n"
+        f"• {t(user_id, 'privacy_data_wallet')}\n"
+        f"• {t(user_id, 'privacy_data_activity')}\n\n"
+        f"🔐 **{t(user_id, 'privacy_data_usage')}**\n"
+        f"• {t(user_id, 'privacy_usage_identity')}\n"
+        f"• {t(user_id, 'privacy_usage_earnings')}\n"
+        f"• {t(user_id, 'privacy_usage_contact')}\n\n"
+        f"🔒 **{t(user_id, 'privacy_data_protection')}**\n"
+        f"• {t(user_id, 'privacy_protection_sharing')}\n"
+        f"• {t(user_id, 'privacy_protection_encryption')}\n\n"
+        f"📧 **{t(user_id, 'privacy_contact')}**\n"
+        f"{t(user_id, 'privacy_contact_details')}\n\n"
+        f"✅ {t(user_id, 'privacy_agreement')}"
+    )
+    
+    if edit_method:
+        await edit_method(msg, parse_mode="Markdown")
+    else:
+        await reply_method(msg, parse_mode="Markdown")
+
+# ===== التواصل مع الدعم (مع ترجمة) =====
+async def support(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض معلومات التواصل مع الدعم مع الترجمة"""
+    reply_method, edit_method, user_id, chat_id = get_reply_and_edit_methods(update)
+    
+    msg = (
+        f"📞 **{t(user_id, 'support_title')}**\n\n"
+        f"{t(user_id, 'support_intro')}\n\n"
+        f"👤 **{t(user_id, 'support_admin')}:** @abkhali\n"
+        f"📧 **{t(user_id, 'support_email')}:** {t(user_id, 'support_email_value')}\n\n"
+        f"⏳ **{t(user_id, 'support_response_time')}:** {t(user_id, 'support_response_value')}\n\n"
+        f"💡 **{t(user_id, 'support_tips_title')}**\n"
+        f"• {t(user_id, 'support_tip_faq')}\n"
+        f"• {t(user_id, 'support_tip_user_id')}"
+    )
+    
+    if edit_method:
+        await edit_method(msg, parse_mode="Markdown")
+    else:
+        await reply_method(msg, parse_mode="Markdown")

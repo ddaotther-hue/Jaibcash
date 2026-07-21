@@ -8,7 +8,8 @@ from handlers_user import (
     balance, watch_ad, claim, referral, withdraw, account,
     leaderboard, rewards, checkin, advertiser_balance,
     show_my_level, show_my_stats, show_my_achievements,
-    transaction_history, withdraw_advertiser_balance
+    transaction_history, withdraw_advertiser_balance,
+    privacy_policy, support
 )
 from handlers_start import handle_language_selection
 from handlers_tasks import browse_tasks, handle_task_admin_action
@@ -23,8 +24,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     data = query.data
-
-    logger.info(f"📩 استقبال callback: {data} من المستخدم {user_id}")
 
     # استثناءات ConversationHandler
     if data == "create_task" or data.startswith("execute_task_"):
@@ -135,7 +134,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(t(user_id, 'main_menu'), reply_markup=get_reply_keyboard(user_id))
         return
 
-    # ===== أزرار القائمة الرئيسية (من الأزرار الثابتة) =====
+    # ===== أزرار القائمة الرئيسية =====
     elif data == 'menu_balance':
         await balance(update, context)
     elif data == 'menu_watch':
@@ -152,6 +151,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await rewards(update, context)
     elif data == 'menu_checkin':
         await checkin(update, context)
+    elif data == 'menu_privacy':
+        await privacy_policy(update, context)
+        return
+    elif data == 'menu_support':
+        await support(update, context)
+        return
 
     else:
         logger.warning(f"⚠️ زر غير معروف: {data}")
@@ -247,7 +252,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_advertiser_withdraw_address(update, context)
         return
 
-    # ----- الأزرار الثابتة (مع الترجمة) -----
+    # ----- الأزرار الثابتة -----
     if text == t(user_id, 'btn_balance'):
         await balance(update, context)
     elif text == t(user_id, 'btn_watch'):
@@ -268,5 +273,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await rewards(update, context)
     elif text == t(user_id, 'btn_advertiser_wallet'):
         await advertiser_balance(update, context)
+    elif text == t(user_id, 'btn_privacy'):
+        await privacy_policy(update, context)
+    elif text == t(user_id, 'btn_support'):
+        await support(update, context)
     else:
         await update.message.reply_text(t(user_id, 'unknown_command'))

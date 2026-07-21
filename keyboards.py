@@ -6,7 +6,7 @@ def get_reply_keyboard(user_id):
         [KeyboardButton(t(user_id, 'btn_balance')), KeyboardButton(t(user_id, 'btn_watch')), KeyboardButton(t(user_id, 'btn_tasks'))],
         [KeyboardButton(t(user_id, 'btn_referral')), KeyboardButton(t(user_id, 'btn_checkin')), KeyboardButton(t(user_id, 'btn_rank'))],
         [KeyboardButton(t(user_id, 'btn_withdraw')), KeyboardButton(t(user_id, 'btn_account')), KeyboardButton(t(user_id, 'btn_rewards'))],
-        [KeyboardButton(t(user_id, 'btn_advertiser_wallet'))]
+        [KeyboardButton(t(user_id, 'btn_advertiser_wallet')), KeyboardButton(t(user_id, 'btn_support')), KeyboardButton(t(user_id, 'btn_privacy'))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -42,11 +42,12 @@ def get_account_menu(user_id):
         [InlineKeyboardButton(t(user_id, 'account_back'), callback_data="account_back")]
     ])
 
-def get_ad_watch_buttons(user_id, click_url, button_name, reward_url, reward_button_name):
-    return InlineKeyboardMarkup([
+def get_ad_watch_buttons(uid, click_url, button_name):
+    keyboard = [
         [InlineKeyboardButton(button_name, url=click_url)],
-        [InlineKeyboardButton(reward_button_name, url=reward_url)]
-    ])
+        [InlineKeyboardButton("✅ تم المشاهدة", callback_data="ad_watched")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
 
 def get_referral_menu(user_id):
     return InlineKeyboardMarkup([

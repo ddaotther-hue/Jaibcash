@@ -1,6 +1,8 @@
 import logging
 import threading
 import os
+import asyncio
+import time
 from flask import Flask, jsonify
 from telegram.ext import (
     Application,
@@ -11,19 +13,19 @@ from telegram.ext import (
 )
 from config import BOT_TOKEN, POINTS_PER_DOLLAR
 from database import init_db, get_advertiser_balance, deduct_advertiser_balance, save_task
-from handlers_start import start
+from handlers_start import start, check_subscription_callback
 from handlers_user import (
     balance, watch_ad, claim, referral, withdraw, account,
     leaderboard, rewards, checkin, advertiser_balance,
     show_my_level, show_my_stats, show_my_achievements,
     transaction_history, withdraw_advertiser_balance
 )
-from handlers_admin import add_points, deduct_points, ban_user_cmd, unban_user_cmd
+from handlers_admin import add_points, deduct_points, ban_user_cmd, unban_user_cmd, admin_panel, admin_callback, user_info_cmd
 from handlers_callback import handle_callback, handle_message
 from task_creation import get_task_creation_handler, init_task_creation
 from handlers_tasks import get_task_execution_handler
 
-# ===== خادم ويب صغير لـ Railway Healthcheck =====
+# ===== خادم ويب صغير لـ Healthcheck =====
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -35,12 +37,8 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 def run_web_server():
-    """تشغيل خادم الويب للمنفذ المحدد من Railway"""
     port = int(os.environ.get("PORT", 8080))
-    try:
-        web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-    except Exception as e:
-        print(f"⚠️ خادم الويب فشل: {e}")
+    web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 # ===== تهيئة قاعدة البيانات =====
 init_db()
@@ -51,14 +49,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def error_handler(update, context):
+    logger.error("حدث استثناء أثناء معالجة تحديث:", exc_info=context.error)
+
 def main():
-    # ===== تشغيل خادم الويب في خيط منفصل =====
+    # تشغيل خادم الويب في خيط منفصل
     web_thread = threading.Thread(target=run_web_server, daemon=True)
     web_thread.start()
     logger.info("🌐 خادم الويب يعمل على المنفذ " + os.environ.get("PORT", "8080"))
 
-    # ===== تشغيل البوت =====
-    application = Application.builder().token(BOT_TOKEN).build()
+    # ===== تأخير 5 ثواني قبل بدء البوت (لتجنب مشاكل الاتصال) =====
+    logger.info("⏳ انتظار 5 ثواني قبل تشغيل البوت...")
+    time.sleep(10)
+
+    # ===== تشغيل البوت مع مهلة أطول =====
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .connect_timeout(30.0)
+        .read_timeout(60.0)
+        .build()
+    )
 
     # ----- تهيئة نظام إنشاء المهام -----
     init_task_creation(
@@ -89,13 +100,29 @@ def main():
     application.add_handler(CommandHandler("deductpoints", deduct_points))
     application.add_handler(CommandHandler("ban", ban_user_cmd))
     application.add_handler(CommandHandler("unban", unban_user_cmd))
+    application.add_handler(CommandHandler("admin", admin_panel))
+    application.add_handler(CommandHandler("userinfo", user_info_cmd))
 
     # ----- معالج الأزرار والرسائل -----
+    application.add_handler(CallbackQueryHandler(check_subscription_callback, pattern="^check_sub$"))
+    application.add_handler(CallbackQueryHandler(admin_callback, pattern="^admin_"))
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(MessageHandler(filters.PHOTO | filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_error_handler(error_handler)
 
     logger.info("✅ JaibCash Bot يعمل الآن...")
-    application.run_polling(allowed_updates=["message", "callback_query"])
+    
+    # تشغيل polling مع event loop
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    loop.run_until_complete(application.initialize())
+    loop.run_until_complete(application.start())
+    loop.run_until_complete(application.updater.start_polling())
+    loop.run_forever()
 
 if __name__ == "__main__":
     main()
