@@ -84,3 +84,64 @@ def is_ad_seen_recently(user_id: int, ad_id: str, ad_source: str, hours: int = 2
     count = cursor.fetchone()[0]
     conn.close()
     return count > 0
+
+# ===== دوال تتبع الإعلانات =====
+
+def save_user_ad(user_id: int, ad_id: str, ad_source: str):
+    """حفظ إعلان شاهدته المستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO user_ad_history (user_id, ad_id, ad_source)
+        VALUES (?, ?, ?)
+    ''', (user_id, ad_id, ad_source))
+    conn.commit()
+    conn.close()
+
+def get_user_recent_ads(user_id: int, hours: int = 24) -> list:
+    """جلب الإعلانات التي شاهدها المستخدم خلال الساعات المحددة"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT ad_id, ad_source FROM user_ad_history
+        WHERE user_id = ? AND watched_at > datetime('now', '-' || ? || ' hours')
+        ORDER BY watched_at DESC
+    ''', (user_id, hours))
+    results = cursor.fetchall()
+    conn.close()
+    return [{'ad_id': r['ad_id'], 'ad_source': r['ad_source']} for r in results]
+
+def get_last_ad_time(user_id: int):
+    """جلب وقت آخر إعلان شاهدته المستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT last_ad_time FROM user_ad_cooldown WHERE user_id = ?
+    ''', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['last_ad_time'] if row else None
+
+def update_last_ad_time(user_id: int):
+    """تحديث وقت آخر إعلان للمستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO user_ad_cooldown (user_id, last_ad_time)
+        VALUES (?, CURRENT_TIMESTAMP)
+    ''', (user_id,))
+    conn.commit()
+    conn.close()
+
+def is_ad_seen_recently(user_id: int, ad_id: str, ad_source: str, hours: int = 24) -> bool:
+    """التحقق مما إذا كان المستخدم قد شاهد هذا الإعلان خلال الساعات المحددة"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT COUNT(*) FROM user_ad_history
+        WHERE user_id = ? AND ad_id = ? AND ad_source = ?
+        AND watched_at > datetime('now', '-' || ? || ' hours')
+    ''', (user_id, ad_id, ad_source, hours))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
