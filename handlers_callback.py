@@ -12,7 +12,7 @@ from handlers_user import (
     privacy_policy, support
 )
 from handlers_start import handle_language_selection
-from handlers_tasks import browse_tasks, handle_task_admin_action
+from handlers_tasks import browse_tasks, handle_task_admin_action, my_posted_tasks, my_posted_tasks
 from config import ADMIN_IDS
 
 logger = logging.getLogger(__name__)
@@ -88,8 +88,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == 'tasks_achievements':
         await query.edit_message_text(t(user_id, 'tasks_achievements_msg'), reply_markup=get_tasks_menu(user_id))
         return
-    elif data == 'tasks_my_posts':
-        await query.edit_message_text(t(user_id, 'tasks_my_posts_msg'), reply_markup=get_tasks_menu(user_id))
+    elif data == "tasks_my_posts":
+        await my_posted_tasks(update, context)
         return
     elif data == 'tasks_back':
         await query.edit_message_text(t(user_id, 'main_menu'), reply_markup=get_reply_keyboard(user_id))
