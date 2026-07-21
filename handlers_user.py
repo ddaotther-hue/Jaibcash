@@ -8,27 +8,13 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
 from config import REQUIRED_CHANNEL, LEVEL_BONUS, MIN_WITHDRAWAL, RICHADS_PUBLISHER_ID, RICHADS_WIDGET_ID, ADSGRAM_BLOCK_ID, ADSGRAM_API_KEY
-from database import (
-    get_db, init_db, create_user, get_user, set_language, get_language,
-    update_approved_tasks, get_level, set_level, is_banned, ban_user, unban_user,
-    get_balance, update_balance, add_withdrawal, get_withdrawals, get_leaderboard,
-    add_referral, get_referral_stats, check_in,
-    get_advertiser_balance, get_advertiser_frozen_balance, get_advertiser_total_balance,
-    freeze_advertiser_balance, release_frozen_balance, add_advertiser_balance,
-    deduct_advertiser_balance, update_advertiser_total_spent,
-    save_charge_request, get_charge_request, update_charge_request_status,
-    save_task, get_task_by_id, get_task_owner, increment_task_completed,
-    save_task_submission, get_task_submission, update_task_submission_status,
-    unlock_achievement, get_achievements, get_transactions, process_referral_earnings,
-    save_user_ad, get_user_recent_ads, get_last_ad_time, update_last_ad_time, is_ad_seen_recently
-)
+from database import *
 from utils import *
 from i18n import t, get_level_name as get_level_name_i18n
 from keyboards import get_reply_keyboard, get_wallet_menu, get_account_menu, get_referral_menu, get_leaderboard_menu
 
 logger = logging.getLogger(__name__)
 
-# ===== الإعدادات =====
 MIN_AD_WATCH_TIME = 15
 AD_COOLDOWN_MINUTES = 1
 AD_REPEAT_HOURS = 24
@@ -81,14 +67,14 @@ async def watch_ad(update, context):
     if is_banned(uid): return await reply("🚫 " + t(uid, 'banned'))
     if not await check_channel_membership(update, context):
         return await reply(t(uid, 'not_subscribed', channel=REQUIRED_CHANNEL))
-    
+
     cooldown = await check_ad_cooldown(uid)
     if cooldown > 0:
         await reply(f"⏳ يرجى الانتظار {cooldown} ثانية قبل مشاهدة إعلان جديد.")
         return
 
     ads = []
-    
+
     # AdsGram
     try:
         ad_url = "https://api.adsgram.ai/advbot"
@@ -193,11 +179,11 @@ async def handle_ad_watched(update, context):
     query = update.callback_query
     await query.answer()
     uid = query.from_user.id
-    
+
     if not context.user_data.get('pending_ad', False):
         await query.edit_message_text("⚠️ " + t(uid, 'claim_already'))
         return
-    
+
     elapsed = time.time() - context.user_data.get('ad_start_time', 0)
     if elapsed < MIN_AD_WATCH_TIME:
         remaining = int(MIN_AD_WATCH_TIME - elapsed)
@@ -206,18 +192,37 @@ async def handle_ad_watched(update, context):
             f"(تم المشاهدة {int(elapsed)} ثانية من أصل {MIN_AD_WATCH_TIME})"
         )
         return
-    
+
     pts = context.user_data.get('ad_points', 1000)
     ad_source = context.user_data.get('ad_source', 'unknown')
     ad_id = context.user_data.get('ad_id', str(int(time.time())))
-    
+
     save_user_ad(uid, ad_id, ad_source)
     update_last_ad_time(uid)
-    
+
     update_balance(uid, pts, 'ad', f'مشاهدة إعلان ({ad_source})')
     process_referral_earnings(uid, pts, "مشاهدة إعلان")
     update_approved_tasks(uid)
-    
+
+    # ===== إشعار للمحيل عند أول مهمة =====
+    try:
+        user = get_user(uid)
+        if user and user['approved_tasks'] == 1:
+            from db.referrals import get_referrer_by_referred
+            referrer_id = get_referrer_by_referred(uid)
+            if referrer_id:
+                bonus = int(pts * 0.05)
+                stats = get_referral_stats(referrer_id)
+                await context.bot.send_message(
+                    chat_id=referrer_id,
+                    text=f"🎉 **أول مهمة للمُحال!**\n\n"
+                         f"👤 المستخدم الذي دعوته أكمل أول مهمة.\n"
+                         f"💰 ربحت 5% من نقاطه: **{bonus:,} نقطة**\n"
+                         f"📊 رصيدك من الإحالات الآن: {format_points(stats['earnings'])} نقطة"
+                )
+    except Exception as e:
+        logger.error(f"❌ فشل إرسال إشعار للمحيل: {e}")
+
     u = get_user(uid)
     new_lvl = calculate_level(u['approved_tasks'] if u else 0)
     old_lvl = u['level'] if u else 0
@@ -228,10 +233,10 @@ async def handle_ad_watched(update, context):
         await query.message.reply_text(
             t(uid, 'level_up', level_name=get_level_name_i18n(uid, new_lvl), bonus=format_points(LEVEL_BONUS))
         )
-    
+
     new_balance = get_balance(uid)
     keyboard = [[InlineKeyboardButton("💰 تفقد رصيدك", callback_data="menu_balance")]]
-    
+
     await query.edit_message_text(
         f"✅ **تهانينا!**\n\n"
         f"🎉 لقد حصلت على **{pts:,} نقطة** من مشاهدة الإعلان!\n"
@@ -241,7 +246,7 @@ async def handle_ad_watched(update, context):
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="Markdown"
     )
-    
+
     context.user_data['pending_ad'] = False
     context.user_data.pop('ad_start_time', None)
     context.user_data.pop('ad_points', None)
@@ -254,6 +259,10 @@ async def claim(update, context):
     if not context.user_data.get('pending_ad', False):
         return await reply("⚠️ " + t(uid, 'claim_already'))
     await handle_ad_watched(update, context)
+
+# ============================================================
+# باقي الدوال (referral, checkin, account, ...) كما هي
+# ============================================================
 
 async def referral(update, context):
     reply, edit, uid, cid = get_reply_and_edit_methods(update)
