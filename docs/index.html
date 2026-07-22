@@ -18,48 +18,133 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      overflow-x: hidden;
+      position: relative;
     }
+
+    /* ===== خلفية جزيئات ذهبية خفيفة ===== */
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      background: #F2CD6B;
+      border-radius: 50%;
+      opacity: 0.4;
+      pointer-events: none;
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      10% { opacity: 0.5; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+    }
+
+    .mascot-wrap {
+      position: relative;
+      width: 200px;
+      margin: 0 auto 20px;
+    }
+
+    .mascot-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 220px;
+      height: 220px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(242,205,107,0.25) 0%, rgba(242,205,107,0) 70%);
+      border-radius: 50%;
+      animation: glowPulse 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
     .mascot-img {
+      position: relative;
       max-width: 200px;
-      border-radius: 20px;
-      margin-bottom: 20px;
-      transition: all 0.3s ease;
+      width: 100%;
+      display: block;
+      margin: 0 auto;
       cursor: pointer;
       touch-action: manipulation;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      animation: idleFloat 3.2s ease-in-out infinite;
+      transform-origin: bottom center;
     }
-    .mascot-img:hover {
-      transform: scale(1.05);
+    @keyframes idleFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
     }
+
     .mascot-img.bounce {
-      animation: bounce 0.6s ease;
+      animation: bounce 0.7s ease;
     }
     @keyframes bounce {
-      0% { transform: scale(1); }
-      30% { transform: scale(1.1) rotate(-3deg); }
-      60% { transform: scale(1.05) rotate(3deg); }
-      100% { transform: scale(1) rotate(0); }
+      0% { transform: scale(1) translateY(0); }
+      30% { transform: scale(1.18) translateY(-25px) rotate(-6deg); }
+      55% { transform: scale(1.05) translateY(-5px) rotate(4deg); }
+      75% { transform: scale(1.1) translateY(-12px) rotate(-2deg); }
+      100% { transform: scale(1) translateY(0) rotate(0deg); }
     }
-    .mascot-img.happy {
-      animation: happy 0.8s ease;
-    }
-    @keyframes happy {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.15) rotate(5deg); }
-      100% { transform: scale(1) rotate(0); }
-    }
+
     .mascot-img.celebrate {
-      animation: celebrate 0.8s ease;
+      animation: celebrate 1s ease;
     }
     @keyframes celebrate {
       0% { transform: scale(1) rotate(0deg); }
-      25% { transform: scale(1.1) rotate(-5deg); }
-      50% { transform: scale(1.15) rotate(5deg); }
-      75% { transform: scale(1.1) rotate(-3deg); }
-      100% { transform: scale(1) rotate(0); }
+      20% { transform: scale(1.15) rotate(-8deg) translateY(-15px); }
+      40% { transform: scale(1.2) rotate(8deg) translateY(-20px); }
+      60% { transform: scale(1.12) rotate(-5deg) translateY(-10px); }
+      80% { transform: scale(1.08) rotate(3deg) translateY(-4px); }
+      100% { transform: scale(1) rotate(0deg) translateY(0); }
     }
+
+    .mascot-img.sleeping {
+      animation: none;
+      filter: brightness(0.6);
+      transform: rotate(0deg);
+    }
+
+    .sleep-zzz {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      font-size: 22px;
+      color: #F2CD6B;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .sleep-zzz.show {
+      animation: zzzFloat 2s ease-in-out infinite;
+    }
+    @keyframes zzzFloat {
+      0% { opacity: 0; transform: translateY(0) scale(0.8); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+    }
+
+    /* ===== سبارك حول الروبوت عند المكافأة ===== */
+    .sparkle {
+      position: absolute;
+      font-size: 18px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .sparkle.pop {
+      animation: sparklePop 0.9s ease-out forwards;
+    }
+    @keyframes sparklePop {
+      0% { opacity: 0; transform: scale(0) translate(0,0); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.4) translate(var(--sx), var(--sy)); }
+    }
+
     .btn {
       background: linear-gradient(135deg, #C9A03E, #F2CD6B);
       color: #0A1122;
@@ -71,15 +156,22 @@
       cursor: pointer;
       transition: transform 0.2s;
       touch-action: manipulation;
+      position: relative;
     }
-    .btn:active {
-      transform: scale(0.95);
+    .btn:active { transform: scale(0.95); }
+    .btn.pulse { animation: btnPulse 1.6s ease-in-out infinite; }
+    @keyframes btnPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(242,205,107,0.5); }
+      50% { box-shadow: 0 0 0 12px rgba(242,205,107,0); }
     }
-    .status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #F2CD6B;
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      animation: none;
     }
+
+    .status { margin-top: 15px; font-size: 14px; color: #F2CD6B; }
+
     .panel {
       background: rgba(19,31,61,0.8);
       border-radius: 16px;
@@ -88,6 +180,8 @@
       width: 100%;
       max-width: 400px;
       border: 1px solid rgba(242,205,107,0.1);
+      position: relative;
+      z-index: 1;
     }
     .eyebrow {
       font-size: 12px;
@@ -100,27 +194,49 @@
       font-size: 32px;
       font-weight: bold;
       color: #FCE8AE;
+      transition: transform 0.15s ease;
     }
-    h1 {
-      color: #F2CD6B;
-      font-size: 28px;
-      margin: 0;
-    }
-    h1 span {
+    .balance.tick { transform: scale(1.08); }
+
+    h1 { color: #F2CD6B; font-size: 28px; margin: 0; position: relative; z-index: 1; }
+    h1 span { color: #FCE8AE; }
+    .sub { color: rgba(243,233,210,0.6); font-size: 14px; margin-top: 5px; position: relative; z-index: 1; }
+
+    /* ===== Achievement popup ===== */
+    .achievement {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120px);
+      background: linear-gradient(135deg, #1c2b52, #131f3d);
+      border: 1px solid rgba(242,205,107,0.5);
       color: #FCE8AE;
-    }
-    .sub {
-      color: rgba(243,233,210,0.6);
+      padding: 14px 22px;
+      border-radius: 14px;
       font-size: 14px;
-      margin-top: 5px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 50;
+      transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+      white-space: nowrap;
     }
+    .achievement.show { transform: translateX(-50%) translateY(0); }
+    .achievement .trophy { font-size: 20px; }
   </style>
 </head>
 <body>
 
-  <!-- ===== التطبيق ===== -->
-  <div class="app">
+  <div id="particleField"></div>
 
+  <div class="achievement" id="achievementToast">
+    <span class="trophy">🏆</span>
+    <span id="achievementText">First Ad Watched</span>
+  </div>
+
+  <div class="app">
     <h1>Jaib <span>Cash</span></h1>
     <p class="sub">Turn Your Time Into Rewards</p>
 
@@ -130,13 +246,15 @@
       <p style="font-size:12px;color:rgba(243,233,210,0.5);">نقطة</p>
     </div>
 
-    <div>
-      <img src="mascot.png?v=4" alt="مساعد Jaib Cash" class="mascot-img" id="mascotImg">
+    <div class="mascot-wrap" id="mascotWrap">
+      <div class="mascot-glow" id="mascotGlow"></div>
+      <span class="sleep-zzz" id="sleepZzz">💤</span>
+      <img src="mascot.png?v=5" alt="مساعد Jaib Cash" class="mascot-img" id="mascotImg">
     </div>
 
     <div class="panel">
       <p class="eyebrow">شاهد إعلان</p>
-      <button class="btn" id="watchBtn">شاهد الآن</button>
+      <button class="btn pulse" id="watchBtn">شاهد الآن</button>
       <div class="status" id="statusLine">اضغط الزر لبدء المشاهدة</div>
     </div>
 
@@ -144,87 +262,174 @@
       <p class="eyebrow">الدعم</p>
       <button class="btn" id="supportBtn" style="background:transparent;border:1px solid rgba(242,205,107,0.4);color:#F2CD6B;width:100%;">📞 تواصل مع الدعم</button>
     </div>
-
   </div>
 
   <script>
-    // ===== Telegram WebApp =====
     const tg = window.Telegram?.WebApp;
     if (tg) { tg.ready(); tg.expand(); }
 
-    // ===== العناصر =====
     const mascot = document.getElementById('mascotImg');
+    const mascotWrap = document.getElementById('mascotWrap');
+    const mascotGlow = document.getElementById('mascotGlow');
+    const sleepZzz = document.getElementById('sleepZzz');
     const statusLine = document.getElementById('statusLine');
     const balanceDisplay = document.getElementById('balanceDisplay');
+    const watchBtn = document.getElementById('watchBtn');
+    const achievementToast = document.getElementById('achievementToast');
+    const achievementText = document.getElementById('achievementText');
+    const particleField = document.getElementById('particleField');
 
     let balance = 128500;
+    let cooldownActive = false;
 
-    // ===== تفاعلات الشخصية =====
+    // ===== جزيئات ذهبية طايفة بالخلفية =====
+    function spawnParticles(count) {
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.bottom = '-10px';
+        p.style.animationDuration = (8 + Math.random() * 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        particleField.appendChild(p);
+      }
+    }
+    spawnParticles(18);
+
+    // ===== حركات الشخصية =====
     function mascotBounce() {
       mascot.classList.remove('bounce');
       void mascot.offsetWidth;
       mascot.classList.add('bounce');
-      setTimeout(() => mascot.classList.remove('bounce'), 600);
-    }
-
-    function mascotHappy() {
-      mascot.classList.remove('happy');
-      void mascot.offsetWidth;
-      mascot.classList.add('happy');
-      setTimeout(() => mascot.classList.remove('happy'), 800);
+      setTimeout(() => mascot.classList.remove('bounce'), 700);
     }
 
     function mascotCelebrate() {
       mascot.classList.remove('celebrate');
       void mascot.offsetWidth;
       mascot.classList.add('celebrate');
-      setTimeout(() => mascot.classList.remove('celebrate'), 800);
+      spawnSparkles();
+      setTimeout(() => mascot.classList.remove('celebrate'), 1000);
     }
 
-    // ===== النقر على الشخصية =====
-    mascot.addEventListener('click', function(e) {
+    function spawnSparkles() {
+      const symbols = ['✨','⭐','💰'];
+      for (let i = 0; i < 8; i++) {
+        const s = document.createElement('span');
+        s.className = 'sparkle';
+        s.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        const angle = (Math.PI * 2 * i) / 8;
+        const dist = 70 + Math.random() * 30;
+        s.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
+        s.style.setProperty('--sy', Math.sin(angle) * dist + 'px');
+        s.style.left = '50%';
+        s.style.top = '50%';
+        mascotWrap.appendChild(s);
+        requestAnimationFrame(() => s.classList.add('pop'));
+        setTimeout(() => s.remove(), 950);
+      }
+    }
+
+    function enterSleep() {
+      mascot.classList.add('sleeping');
+      sleepZzz.classList.add('show');
+      mascotGlow.style.opacity = '0.15';
+    }
+    function exitSleep() {
+      mascot.classList.remove('sleeping');
+      sleepZzz.classList.remove('show');
+      mascotGlow.style.opacity = '';
+    }
+
+    mascot.addEventListener('click', function (e) {
       e.preventDefault();
+      if (cooldownActive) return;
       mascotBounce();
-      mascotHappy();
     });
 
-    // ===== رمش عشوائي =====
-    function randomBlink() {
-      mascot.style.filter = 'brightness(0.8) contrast(1.2)';
-      setTimeout(() => {
-        mascot.style.filter = '';
-      }, 150);
+    // ===== عداد رصيد متحرك (count-up) =====
+    function animateBalance(from, to, duration) {
+      const start = performance.now();
+      function step(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(from + (to - from) * eased);
+        balanceDisplay.textContent = current.toLocaleString();
+        balanceDisplay.classList.add('tick');
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          balanceDisplay.textContent = to.toLocaleString();
+          balanceDisplay.classList.remove('tick');
+        }
+      }
+      requestAnimationFrame(step);
     }
-    setInterval(() => {
-      if (Math.random() > 0.6) randomBlink();
-    }, 3000);
+
+    // ===== Achievement popup =====
+    function showAchievement(text) {
+      achievementText.textContent = text;
+      achievementToast.classList.add('show');
+      setTimeout(() => achievementToast.classList.remove('show'), 3000);
+    }
+
+    function checkFirstAdAchievement() {
+      if (!localStorage.getItem('jc_first_ad_seen')) {
+        localStorage.setItem('jc_first_ad_seen', '1');
+        setTimeout(() => showAchievement('أول إعلان! First Ad Watched'), 1200);
+      }
+    }
 
     // ===== زر مشاهدة الإعلان =====
-    document.getElementById('watchBtn').addEventListener('click', function(e) {
+    watchBtn.addEventListener('click', function (e) {
       e.preventDefault();
+      if (cooldownActive) return;
+
+      cooldownActive = true;
+      watchBtn.disabled = true;
+      watchBtn.classList.remove('pulse');
+
       statusLine.textContent = '⏳ جاري تحميل الإعلان...';
       statusLine.style.color = '#F2CD6B';
-
       mascotBounce();
 
       setTimeout(() => {
+        const oldBalance = balance;
         balance += 1000;
-        balanceDisplay.textContent = balance.toLocaleString();
+        animateBalance(oldBalance, balance, 900);
 
         statusLine.textContent = '✅ تمت المشاهدة! +1000 نقطة';
         statusLine.style.color = '#6FA287';
-
         mascotCelebrate();
+        checkFirstAdAchievement();
+
+        let remaining = 15;
+        const cooldownInterval = setInterval(() => {
+          remaining--;
+          if (remaining > 0) {
+            watchBtn.textContent = `متاح خلال ${remaining} ث`;
+          } else {
+            clearInterval(cooldownInterval);
+            watchBtn.textContent = 'شاهد الآن';
+            watchBtn.disabled = false;
+            watchBtn.classList.add('pulse');
+            statusLine.textContent = 'اضغط الزر لبدء المشاهدة';
+            statusLine.style.color = '#F2CD6B';
+            cooldownActive = false;
+            exitSleep();
+          }
+        }, 1000);
+
+        setTimeout(enterSleep, 1000);
       }, 2000);
     });
 
-    // ===== زر الدعم =====
-    document.getElementById('supportBtn').addEventListener('click', function(e) {
+    document.getElementById('supportBtn').addEventListener('click', function (e) {
       e.preventDefault();
       window.open('https://t.me/abkhali', '_blank');
     });
 
-    console.log('JaibCash Mini App loaded!');
+    console.log('JaibCash Mini App loaded (v2 - live mascot)!');
   </script>
 
 </body>
