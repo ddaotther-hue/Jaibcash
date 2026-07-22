@@ -4,52 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jaib Cash</title>
-  // ===== تفاعلات الشخصية =====
-  const mascotImg = document.getElementById("mascotImg");
-  
-  function mascotBounce() {
-    mascotImg.classList.remove("bounce");
-    void mascotImg.offsetWidth;
-    mascotImg.classList.add("bounce");
-    setTimeout(() => mascotImg.classList.remove("bounce"), 600);
-  }
-  
-  function mascotHappy() {
-    mascotImg.classList.remove("happy");
-    void mascotImg.offsetWidth;
-    mascotImg.classList.add("happy");
-    setTimeout(() => mascotImg.classList.remove("happy"), 800);
-  }
-  
-  function mascotSleep() {
-    mascotImg.classList.add("sleep");
-    setTimeout(() => mascotImg.classList.remove("sleep"), 3000);
-  }
-  
-  function mascotCelebrate() {
-    mascotImg.classList.remove("celebrate");
-    void mascotImg.offsetWidth;
-    mascotImg.classList.add("celebrate");
-    setTimeout(() => mascotImg.classList.remove("celebrate"), 800);
-  }
-  
-  // ===== النقر على الشخصية =====
-  mascotImg.addEventListener("click", () => {
-    mascotBounce();
-    mascotHappy();
-  });
-  
-  // ===== رمش عشوائي =====
-  function randomBlink() {
-    mascotImg.style.filter = "brightness(0.8) contrast(1.2)";
-    setTimeout(() => {
-      mascotImg.style.filter = "";
-    }, 150);
-  }
-  setInterval(() => {
-    if (Math.random() > 0.6) randomBlink();
-  }, 3000);
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@500;700;800&display=swap');
@@ -179,7 +133,7 @@
   .view.active{ display:block; animation: fadeIn .25s ease; }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
 
-  /* ===== الشخصية ===== */
+  /* ===== الشخصية التفاعلية ===== */
   .mascot-stage{
     position:relative;
     height:200px;
@@ -201,3 +155,365 @@
     0%,100%{ opacity:.55; transform:scale(1); }
     50%{ opacity:.9; transform:scale(1.08); }
   }
+  .mascot-img{
+    position:relative;
+    z-index:1;
+    max-height:180px;
+    max-width:82%;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.55));
+    animation: floaty 4.2s ease-in-out infinite;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .mascot-img:hover {
+    transform: scale(1.05);
+  }
+  .mascot-img.bounce {
+    animation: bounce 0.6s ease;
+  }
+  @keyframes bounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.1) rotate(-3deg); }
+    60% { transform: scale(1.05) rotate(3deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .mascot-img.happy {
+    animation: happy 0.8s ease;
+  }
+  @keyframes happy {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15) rotate(5deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .mascot-img.sleep {
+    filter: brightness(0.5) saturate(0.3);
+    animation: sleep 2s ease-in-out infinite;
+  }
+  @keyframes sleep {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(0.95) rotate(2deg); }
+  }
+  .mascot-img.celebrate {
+    animation: celebrate 0.8s ease;
+  }
+  @keyframes celebrate {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(-5deg); }
+    50% { transform: scale(1.15) rotate(5deg); }
+    75% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+  }
+
+  /* ===== الأرقام ===== */
+  .flap-board{ direction:ltr; display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+  .flap{ position:relative; width:34px; height:48px; perspective:220px; }
+  .flap.sm{ width:22px; height:32px; }
+  .flap-inner{ position:relative; width:100%; height:100%; transform-style:preserve-3d; transition: transform .5s cubic-bezier(.55,.05,.4,.95); }
+  .face{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background: var(--panel); border-radius:6px; font-family:'JetBrains Mono', monospace; font-weight:700;
+    font-size:26px; color: var(--cream); backface-visibility:hidden;
+    box-shadow: inset 0 -14px 16px -12px rgba(0,0,0,.6), inset 0 14px 16px -12px rgba(0,0,0,.4), 0 0 0 1px rgba(242,205,107,0.12);
+    border:1px solid rgba(242,205,107,0.1);
+  }
+  .flap.sm .face{ font-size:15px; }
+  .face.back{ transform:rotateX(180deg); }
+  .flap-inner.flipping{ transform:rotateX(-180deg); }
+  .flap-unit{ text-align:center; margin-top:8px; font-size:11px; letter-spacing:1px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+
+  /* ===== أزرار ===== */
+  .btn{
+    position:relative; overflow:hidden; width:100%; border:none; border-radius:13px;
+    padding:15px; font-family:'Cairo', sans-serif; font-weight:700; font-size:15.5px;
+    cursor:pointer; transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
+  .btn-gold{
+    background: linear-gradient(135deg, var(--gold-deep) 0%, var(--gold) 32%, var(--gold-shine) 52%, var(--gold-bright) 68%, var(--gold-deep) 100%);
+    color:#241804; box-shadow: 0 12px 26px rgba(201,160,62,0.32), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .btn-outline{
+    background: transparent; color: var(--gold-bright); border:1px solid rgba(242,205,107,0.4);
+  }
+  .btn-locked{ background: rgba(255,255,255,0.06); color: var(--muted); }
+  .status{ margin-top:12px; min-height:18px; font-size:12.5px; text-align:center; font-family:'JetBrains Mono', monospace; }
+  .status.ok{ color: var(--ok); }
+  .status.err{ color: var(--err); }
+  .status.wait{ color: var(--muted); }
+
+  /* ===== التقدم ===== */
+  .progress-head{ display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; color:var(--muted); margin-bottom:8px; font-family:'JetBrains Mono',monospace;}
+  .progress-head b{ color:var(--gold-bright); font-size:14px; }
+  .progress-track{ height:10px; border-radius:6px; background:rgba(0,0,0,.35); overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,.5); }
+  .progress-fill{ height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg, var(--gold-deep), var(--gold-bright), var(--gold-shine)); transition: width .6s ease; }
+
+  /* ===== التنقل ===== */
+  .bottom-nav{
+    position:fixed; bottom:0; left:0; right:0;
+    max-width:480px; margin:0 auto;
+    background: rgba(10,17,34,0.92); backdrop-filter: blur(10px);
+    border-top:1px solid rgba(242,205,107,0.15);
+    display:flex; padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    z-index:10;
+  }
+  .nav-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:none; border:none; color:var(--muted); font-family:'IBM Plex Sans Arabic'; font-size:10.5px;
+    padding:6px 2px; cursor:pointer;
+  }
+  .nav-btn svg{ width:21px; height:21px; stroke:var(--muted); fill:none; stroke-width:1.8; }
+  .nav-btn.active{ color:var(--gold-bright); }
+  .nav-btn.active svg{ stroke:var(--gold-bright); }
+</style>
+</head>
+<body>
+
+<!-- ===== Splash Screen ===== -->
+<div id="splash-screen">
+  <div class="splash-content">
+    <div class="splash-icon">💎</div>
+    <div class="splash-title">Jaib<span>Cash</span></div>
+    <div class="splash-sub">Turn Your Time Into Rewards</div>
+    <div class="splash-loader">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== التطبيق ===== -->
+<div class="app">
+
+  <div class="brand">
+    <div class="brand-name">Jaib <span>Cash</span></div>
+    <div class="session"><span class="dot"></span><span>الجلسة نشطة</span></div>
+  </div>
+
+  <!-- ===== الرئيسية ===== -->
+  <section class="view active" id="view-home">
+    <div class="mascot-stage" id="mascotStage">
+      <div class="mascot-glow" id="mascotGlow"></div>
+      <img src="mascot_v2.png?v=3" alt="مساعد Jaib Cash" class="mascot-img" id="mascotImg">
+    </div>
+
+    <div class="panel">
+      <p class="eyebrow">رصيدك الآن</p>
+      <div class="flap-board balance-flap" id="balanceBoardHome"></div>
+      <p class="flap-unit">نقطة</p>
+    </div>
+
+    <div class="panel">
+      <div class="progress-head"><span>التقدم نحو تفعيل السحب</span><b id="progressPct">0%</b></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <p class="progress-note" id="progressNote">تبقى <b id="progressRemain">2,000,000</b> نقطة لتفعيل السحب</p>
+    </div>
+
+    <div class="panel">
+      <p class="eyebrow">شاهد إعلان</p>
+      <button class="btn btn-gold" id="watchBtn">شاهد الآن</button>
+      <div class="status wait" id="statusLine">اضغط الزر لبدء المشاهدة</div>
+    </div>
+  </section>
+
+  <!-- ===== المهام ===== -->
+  <section class="view" id="view-tasks">
+    <p class="eyebrow">المهام المتاحة</p>
+    <div id="tasksList">لا توجد مهام حالياً</div>
+  </section>
+
+  <!-- ===== المحفظة ===== -->
+  <section class="view" id="view-wallet">
+    <div class="panel">
+      <p class="eyebrow">رصيدك</p>
+      <div class="flap-board balance-flap" id="balanceBoardWallet"></div>
+      <p class="flap-unit">نقطة</p>
+    </div>
+    <div class="panel">
+      <p class="eyebrow">السحب</p>
+      <button class="btn btn-locked" id="withdrawBtn" disabled>🔒 يتفعل عند 2,000,000 نقطة</button>
+    </div>
+  </section>
+
+  <!-- ===== الإحالة ===== -->
+  <section class="view" id="view-referral">
+    <div class="panel">
+      <p class="eyebrow">رابط دعوتك</p>
+      <div class="code-box">كود الدعوة: <b id="refCode">JC-7F2K9</b></div>
+      <button class="btn btn-gold" id="shareRefBtn">شارك دعوتك</button>
+    </div>
+  </section>
+
+  <!-- ===== المزيد ===== -->
+  <section class="view" id="view-more">
+    <div class="panel">
+      <p class="eyebrow">المزيد</p>
+      <button class="btn btn-outline" id="supportBtn">📞 الدعم</button>
+      <button class="btn btn-outline" style="margin-top:10px;" id="privacyBtn">🔒 سياسة الخصوصية</button>
+    </div>
+  </section>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-view="home">
+      <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>
+      الرئيسية
+    </button>
+    <button class="nav-btn" data-view="tasks">
+      <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+      المهام
+    </button>
+    <button class="nav-btn" data-view="wallet">
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 10h18"/><circle cx="16" cy="14.5" r="1.2" fill="var(--gold-bright)" stroke="none"/></svg>
+      المحفظة
+    </button>
+    <button class="nav-btn" data-view="referral">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.5c2.6.4 4.5 2.2 4.5 5.5"/></svg>
+      الإحالة
+    </button>
+    <button class="nav-btn" data-view="more">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>
+      المزيد
+    </button>
+  </nav>
+</div>
+
+<script>
+  // ===== Telegram WebApp =====
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // ===== Splash Screen =====
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const splash = document.getElementById('splash-screen');
+      splash.classList.add('hide');
+      setTimeout(() => splash.remove(), 900);
+    }, 2500);
+  });
+
+  // ===== التنقل بين التبويبات =====
+  const navBtns = document.querySelectorAll('.nav-btn');
+  const views = document.querySelectorAll('.view');
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      navBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      views.forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    });
+  });
+
+  // ===== العناصر =====
+  const mascot = document.getElementById('mascotImg');
+  const glow = document.getElementById('mascotGlow');
+  const statusLine = document.getElementById('statusLine');
+
+  // ===== تفاعلات الشخصية =====
+  function mascotBounce() {
+    mascot.classList.remove('bounce');
+    void mascot.offsetWidth;
+    mascot.classList.add('bounce');
+    setTimeout(() => mascot.classList.remove('bounce'), 600);
+  }
+
+  function mascotHappy() {
+    mascot.classList.remove('happy');
+    void mascot.offsetWidth;
+    mascot.classList.add('happy');
+    setTimeout(() => mascot.classList.remove('happy'), 800);
+  }
+
+  function mascotCelebrate() {
+    mascot.classList.remove('celebrate');
+    void mascot.offsetWidth;
+    mascot.classList.add('celebrate');
+    setTimeout(() => mascot.classList.remove('celebrate'), 800);
+  }
+
+  // ===== النقر على الشخصية =====
+  mascot.addEventListener('click', () => {
+    mascotBounce();
+    mascotHappy();
+  });
+
+  // ===== رمش عشوائي =====
+  function randomBlink() {
+    mascot.style.filter = 'brightness(0.8) contrast(1.2)';
+    setTimeout(() => {
+      mascot.style.filter = '';
+    }, 150);
+  }
+  setInterval(() => {
+    if (Math.random() > 0.6) randomBlink();
+  }, 3000);
+
+  // ===== عرض الأرقام =====
+  function renderBalance(container, value) {
+    const str = String(value).padStart(7, '0');
+    container.innerHTML = str.split('').map(d =>
+      `<div class="flap"><div class="flap-inner"><div class="face front"><span>${d}</span></div><div class="face back"><span>${d}</span></div></div></div>`
+    ).join('');
+  }
+
+  // ===== بيانات أولية (مؤقتة) =====
+  let balance = 128500;
+  const balanceBoards = document.querySelectorAll('.balance-flap');
+  balanceBoards.forEach(el => renderBalance(el, balance));
+
+  // ===== زر مشاهدة الإعلان =====
+  document.getElementById('watchBtn').addEventListener('click', () => {
+    statusLine.textContent = '⏳ جاري تحميل الإعلان...';
+    statusLine.className = 'status wait';
+
+    // تفاعل الشخصية
+    mascotBounce();
+
+    setTimeout(() => {
+      // إضافة نقاط
+      balance += 1000;
+      balanceBoards.forEach(el => renderBalance(el, balance));
+
+      // تحديث التقدم
+      const pct = Math.min(100, (balance / 2000000) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPct').textContent = pct.toFixed(1) + '%';
+
+      // حالة النجاح
+      statusLine.textContent = '✅ تمت المشاهدة! +1000 نقطة';
+      statusLine.className = 'status ok';
+
+      // احتفال الشخصية
+      mascotCelebrate();
+
+    }, 2000);
+  });
+
+  // ===== زر الدعم =====
+  document.getElementById('supportBtn').addEventListener('click', () => {
+    window.open('https://t.me/abkhali', '_blank');
+  });
+
+  // ===== زر سياسة الخصوصية =====
+  document.getElementById('privacyBtn').addEventListener('click', () => {
+    alert('سياسة الخصوصية - JaibCash\n\nنحن في JaibCash نلتزم بحماية خصوصيتك.');
+  });
+
+  // ===== زر الإحالة =====
+  document.getElementById('shareRefBtn').addEventListener('click', () => {
+    const link = `https://t.me/JaibCashbot?start=JC-7F2K9`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('انضم إلى Jaib Cash واربح نقاط!')}`);
+    } else {
+      navigator.clipboard?.writeText(link);
+      alert('تم نسخ رابط الدعوة');
+    }
+  });
+
+  console.log('JaibCash Mini App loaded successfully!');
+</script>
+
+</body>
+</html>
