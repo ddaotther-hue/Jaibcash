@@ -81,7 +81,7 @@
     50% { transform: scale(1.2); opacity: 1; }
   }
 
-  /* ===== باقي التصميم (نفس الواجهة السابقة) ===== */
+  /* ===== التصميم الرئيسي ===== */
   :root{
     --ink:#0A1122;
     --ink-soft:#0F1830;
@@ -133,21 +133,74 @@
   .view.active{ display:block; animation: fadeIn .25s ease; }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
 
-  .mascot-stage{ position:relative; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+  /* ===== الشخصية ===== */
+  .mascot-stage{
+    position:relative;
+    height:200px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:8px;
+  }
   .mascot-glow{
-    position:absolute; width:180px; height:180px; border-radius:50%;
+    position:absolute;
+    width:180px;
+    height:180px;
+    border-radius:50%;
     background: radial-gradient(circle, rgba(242,205,107,0.35), transparent 65%);
     filter: blur(6px);
     animation: glowPulse 3.4s ease-in-out infinite;
   }
-  @keyframes glowPulse{ 0%,100%{ opacity:.55; transform:scale(1);} 50%{ opacity:.9; transform:scale(1.08);} }
-  .mascot-img{
-    position:relative; z-index:1; max-height:180px; max-width:82%;
-    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.55));
-    animation: floaty 4.2s ease-in-out infinite;
+  @keyframes glowPulse{
+    0%,100%{ opacity:.55; transform:scale(1); }
+    50%{ opacity:.9; transform:scale(1.08); }
   }
-  @keyframes floaty{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  .mascot-img{
+    position:relative;
+    z-index:1;
+    max-height:180px;
+    max-width:82%;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.55));
+    animation: floaty 4.2s ease-in-out infinite, breathe 3s ease-in-out infinite;
+    transition: transform 0.3s ease, filter 0.3s ease;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  .mascot-img.jump {
+    animation: jump 0.6s ease !important;
+  }
+  @keyframes jump {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-25px) scale(1.05); }
+    60% { transform: translateY(-10px) scale(1.02); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  .mascot-img.blink {
+    filter: brightness(0.8) contrast(1.2);
+    transition: filter 0.1s ease;
+  }
+  .mascot-img.celebrate {
+    animation: celebrate 0.8s ease !important;
+  }
+  @keyframes celebrate {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(-5deg); }
+    50% { transform: scale(1.15) rotate(5deg); }
+    75% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  .mascot-img.cooldown {
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.55)) brightness(0.6) saturate(0.5);
+    animation: floaty 5.5s ease-in-out infinite;
+  }
 
+  /* ===== الأرقام ===== */
   .flap-board{ direction:ltr; display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
   .flap{ position:relative; width:34px; height:48px; perspective:220px; }
   .flap.sm{ width:22px; height:32px; }
@@ -164,6 +217,7 @@
   .flap-inner.flipping{ transform:rotateX(-180deg); }
   .flap-unit{ text-align:center; margin-top:8px; font-size:11px; letter-spacing:1px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
 
+  /* ===== أزرار ===== */
   .btn{
     position:relative; overflow:hidden; width:100%; border:none; border-radius:13px;
     padding:15px; font-family:'Cairo', sans-serif; font-weight:700; font-size:15.5px;
@@ -184,11 +238,13 @@
   .status.err{ color: var(--err); }
   .status.wait{ color: var(--muted); }
 
+  /* ===== التقدم ===== */
   .progress-head{ display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; color:var(--muted); margin-bottom:8px; font-family:'JetBrains Mono',monospace;}
   .progress-head b{ color:var(--gold-bright); font-size:14px; }
   .progress-track{ height:10px; border-radius:6px; background:rgba(0,0,0,.35); overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,.5); }
   .progress-fill{ height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg, var(--gold-deep), var(--gold-bright), var(--gold-shine)); transition: width .6s ease; }
 
+  /* ===== التنقل ===== */
   .bottom-nav{
     position:fixed; bottom:0; left:0; right:0;
     max-width:480px; margin:0 auto;
@@ -232,7 +288,7 @@
   <!-- ===== الرئيسية ===== -->
   <section class="view active" id="view-home">
     <div class="mascot-stage" id="mascotStage">
-      <div class="mascot-glow"></div>
+      <div class="mascot-glow" id="mascotGlow"></div>
       <img src="mascot.png" alt="مساعد Jaib Cash" class="mascot-img" id="mascotImg">
     </div>
 
@@ -317,6 +373,10 @@
 </div>
 
 <script>
+  // ===== Telegram WebApp =====
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
   // ===== Splash Screen =====
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -338,12 +398,97 @@
     });
   });
 
-  // ===== مؤقت: بيانات وهمية =====
-  const balance = 128500;
-  document.querySelectorAll('.balance-flap').forEach(el => {
-    el.innerHTML = String(balance).padStart(7,'0').split('').map(d =>
+  // ===== العناصر =====
+  const mascot = document.getElementById('mascotImg');
+  const glow = document.getElementById('mascotGlow');
+  const statusLine = document.getElementById('statusLine');
+
+  // ===== تفاعلات الشخصية =====
+  function mascotJump() {
+    mascot.classList.remove('jump');
+    void mascot.offsetWidth;
+    mascot.classList.add('jump');
+    setTimeout(() => mascot.classList.remove('jump'), 600);
+  }
+
+  function mascotBlink() {
+    mascot.classList.add('blink');
+    setTimeout(() => mascot.classList.remove('blink'), 150);
+  }
+
+  function mascotCelebrate() {
+    mascot.classList.add('celebrate');
+    setTimeout(() => mascot.classList.remove('celebrate'), 800);
+  }
+
+  function mascotCooldown() {
+    mascot.classList.add('cooldown');
+    setTimeout(() => mascot.classList.remove('cooldown'), 3000);
+  }
+
+  // ===== رمش عشوائي =====
+  setInterval(() => {
+    if (Math.random() > 0.6) mascotBlink();
+  }, 3000);
+
+  // ===== تأثير التوهج =====
+  function glowFlash() {
+    glow.style.animation = 'none';
+    glow.style.boxShadow = '0 0 60px rgba(242,205,107,0.8)';
+    setTimeout(() => {
+      glow.style.animation = 'glowPulse 3.4s ease-in-out infinite';
+      glow.style.boxShadow = '';
+    }, 400);
+  }
+
+  // ===== عرض الأرقام =====
+  function renderBalance(container, value) {
+    const str = String(value).padStart(7, '0');
+    container.innerHTML = str.split('').map(d =>
       `<div class="flap"><div class="flap-inner"><div class="face front"><span>${d}</span></div><div class="face back"><span>${d}</span></div></div></div>`
     ).join('');
+  }
+
+  // ===== بيانات أولية (مؤقتة) =====
+  let balance = 128500;
+  const balanceBoards = document.querySelectorAll('.balance-flap');
+  balanceBoards.forEach(el => renderBalance(el, balance));
+
+  // ===== زر مشاهدة الإعلان =====
+  document.getElementById('watchBtn').addEventListener('click', () => {
+    statusLine.textContent = '⏳ جاري تحميل الإعلان...';
+    statusLine.className = 'status wait';
+
+    // تفاعل الشخصية
+    mascotJump();
+    glowFlash();
+
+    setTimeout(() => {
+      // إضافة نقاط
+      balance += 1000;
+      balanceBoards.forEach(el => renderBalance(el, balance));
+
+      // تحديث التقدم
+      const pct = Math.min(100, (balance / 2000000) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPct').textContent = pct.toFixed(1) + '%';
+
+      // حالة النجاح
+      statusLine.textContent = '✅ تمت المشاهدة! +1000 نقطة';
+      statusLine.className = 'status ok';
+
+      // احتفال الشخصية
+      mascotCelebrate();
+
+      // تأثير التوهج
+      glow.style.animation = 'none';
+      glow.style.boxShadow = '0 0 80px rgba(242,205,107,0.9)';
+      setTimeout(() => {
+        glow.style.animation = 'glowPulse 3.4s ease-in-out infinite';
+        glow.style.boxShadow = '';
+      }, 600);
+
+    }, 2000);
   });
 
   // ===== زر الدعم =====
@@ -356,20 +501,19 @@
     alert('سياسة الخصوصية - JaibCash\n\nنحن في JaibCash نلتزم بحماية خصوصيتك.');
   });
 
-  // ===== زر مشاهدة الإعلان =====
-  document.getElementById('watchBtn').addEventListener('click', () => {
-    const status = document.getElementById('statusLine');
-    status.textContent = '⏳ جاري تحميل الإعلان...';
-    status.className = 'status wait';
-    setTimeout(() => {
-      status.textContent = '✅ تمت المشاهدة! +1000 نقطة';
-      status.className = 'status ok';
-      document.getElementById('mascotStage').style.animation = 'none';
-      setTimeout(() => {
-        document.getElementById('mascotStage').style.animation = '';
-      }, 100);
-    }, 1500);
+  // ===== زر الإحالة =====
+  document.getElementById('shareRefBtn').addEventListener('click', () => {
+    const link = `https://t.me/JaibCashbot?start=JC-7F2K9`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('انضم إلى Jaib Cash واربح نقاط!')}`);
+    } else {
+      navigator.clipboard?.writeText(link);
+      alert('تم نسخ رابط الدعوة');
+    }
   });
+
+  // ===== اختصار للتصحيح =====
+  console.log('JaibCash Mini App loaded successfully!');
 </script>
 
 </body>
