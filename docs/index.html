@@ -6,396 +6,666 @@
   <title>Jaib Cash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    * { box-sizing: border-box; }
+    /* ===== Reset & Base ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #0A1122;
       color: #F3E9D2;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px 16px 50px;
-      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== Splash Screen ===== */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: radial-gradient(ellipse at 50% 40%, #131F3D, #0A1122 70%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      overflow-x: hidden;
-      position: relative;
+      justify-content: center;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    #splash.hide {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
+    }
+    .splash-icon {
+      font-size: 80px;
+      margin-bottom: 12px;
+      animation: splashFloat 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 40px rgba(201,160,62,0.3));
+    }
+    @keyframes splashFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-12px) scale(1.04); }
+    }
+    .splash-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #FCE8AE;
+      letter-spacing: 1px;
+    }
+    .splash-title span { color: #C9A03E; }
+    .splash-sub {
+      font-size: 14px;
+      color: rgba(243,233,210,0.5);
+      margin-top: 6px;
+      letter-spacing: 3px;
+      font-weight: 300;
+    }
+    .splash-loader {
+      margin-top: 30px;
+      width: 160px;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .splash-loader::after {
+      content: '';
+      display: block;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, #C9A03E, #F2CD6B, #FCE8AE);
+      border-radius: 4px;
+      animation: loaderSlide 1.2s ease-in-out infinite;
+    }
+    @keyframes loaderSlide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
     }
 
+    /* ===== App Container ===== */
+    .app {
+      max-width: 420px;
+      width: 100%;
+      padding: 20px 16px 80px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    .app.show { display: flex; }
+
+    /* ===== Particles ===== */
     .particle {
       position: fixed;
-      width: 4px;
-      height: 4px;
+      width: 3px;
+      height: 3px;
       background: #F2CD6B;
       border-radius: 50%;
-      opacity: 0.4;
+      opacity: 0.3;
       pointer-events: none;
       animation: floatUp linear infinite;
     }
     @keyframes floatUp {
       0% { transform: translateY(0) translateX(0); opacity: 0; }
       10% { opacity: 0.5; }
-      90% { opacity: 0.3; }
+      90% { opacity: 0.2; }
       100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
     }
 
-    h1 { color: #F2CD6B; font-size: 26px; margin: 0; position: relative; z-index: 1; }
-    h1 span { color: #FCE8AE; }
-    .sub { color: rgba(243,233,210,0.6); font-size: 13px; margin: 4px 0 20px; position: relative; z-index: 1; }
-
-    .mascot-stage {
+    /* ===== Mascot ===== */
+    .mascot-wrap {
       position: relative;
-      width: 260px;
-      height: 260px;
-      margin: 0 auto 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .level-ring-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-    .level-ring-bg { fill: none; stroke: rgba(242,205,107,0.12); stroke-width: 6; }
-    .level-ring-fg {
-      fill: none;
-      stroke: url(#ringGradient);
-      stroke-width: 6;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 1.2s cubic-bezier(.34,1.56,.64,1);
+      width: 180px;
+      margin: 0 auto 16px;
     }
     .mascot-glow {
       position: absolute;
-      top: 50%; left: 50%;
-      width: 190px; height: 190px;
+      top: 50%;
+      left: 50%;
+      width: 220px;
+      height: 220px;
       transform: translate(-50%, -50%);
-      background: radial-gradient(circle, rgba(242,205,107,0.25) 0%, rgba(242,205,107,0) 70%);
+      background: radial-gradient(circle, rgba(242,205,107,0.2) 0%, transparent 70%);
       border-radius: 50%;
       animation: glowPulse 3s ease-in-out infinite;
       pointer-events: none;
     }
     @keyframes glowPulse {
       0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.08); }
+      50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); }
     }
-
     .mascot-img {
       position: relative;
-      width: 150px;
+      width: 100%;
+      display: block;
       cursor: pointer;
       touch-action: manipulation;
       -webkit-touch-callout: none;
-      -webkit-user-select: none;
       user-select: none;
       animation: idleFloat 3.2s ease-in-out infinite;
-      transform-origin: bottom center;
     }
     @keyframes idleFloat {
       0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-10px) rotate(1deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
     }
-    .mascot-img.bounce { animation: bounce 0.7s ease; }
+    .mascot-img.bounce {
+      animation: bounce 0.7s ease;
+    }
     @keyframes bounce {
       0% { transform: scale(1) translateY(0); }
-      30% { transform: scale(1.18) translateY(-25px) rotate(-6deg); }
-      55% { transform: scale(1.05) translateY(-5px) rotate(4deg); }
-      75% { transform: scale(1.1) translateY(-12px) rotate(-2deg); }
+      30% { transform: scale(1.15) translateY(-22px) rotate(-5deg); }
+      60% { transform: scale(1.05) translateY(-5px) rotate(3deg); }
       100% { transform: scale(1) translateY(0) rotate(0deg); }
     }
-    .mascot-img.celebrate { animation: celebrate 1s ease; }
+    .mascot-img.celebrate {
+      animation: celebrate 0.9s ease;
+    }
     @keyframes celebrate {
-      0% { transform: scale(1) rotate(0deg); }
-      20% { transform: scale(1.15) rotate(-8deg) translateY(-15px); }
-      40% { transform: scale(1.2) rotate(8deg) translateY(-20px); }
-      60% { transform: scale(1.12) rotate(-5deg) translateY(-10px); }
-      80% { transform: scale(1.08) rotate(3deg) translateY(-4px); }
-      100% { transform: scale(1) rotate(0deg) translateY(0); }
+      0% { transform: scale(1) rotate(0); }
+      20% { transform: scale(1.15) rotate(-6deg) translateY(-12px); }
+      40% { transform: scale(1.2) rotate(6deg) translateY(-16px); }
+      60% { transform: scale(1.1) rotate(-4deg) translateY(-8px); }
+      80% { transform: scale(1.05) rotate(2deg) translateY(-3px); }
+      100% { transform: scale(1) rotate(0) translateY(0); }
     }
-    .mascot-img.sleeping { animation: none; filter: brightness(0.6); }
-
+    .mascot-img.sleeping {
+      animation: none;
+      filter: brightness(0.5) saturate(0.4);
+    }
     .sleep-zzz {
-      position: absolute; top: 10px; right: 30px;
-      font-size: 20px; color: #F2CD6B; opacity: 0; pointer-events: none;
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      font-size: 20px;
+      opacity: 0;
+      pointer-events: none;
     }
-    .sleep-zzz.show { animation: zzzFloat 2s ease-in-out infinite; }
+    .sleep-zzz.show {
+      opacity: 1;
+      animation: zzzFloat 2s ease-in-out infinite;
+    }
     @keyframes zzzFloat {
       0% { opacity: 0; transform: translateY(0) scale(0.8); }
       30% { opacity: 1; }
-      100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+      100% { opacity: 0; transform: translateY(-36px) scale(1.2); }
     }
 
-    .sparkle { position: absolute; font-size: 18px; opacity: 0; pointer-events: none; }
-    .sparkle.pop { animation: sparklePop 0.9s ease-out forwards; }
+    /* ===== Sparkles ===== */
+    .sparkle {
+      position: absolute;
+      font-size: 16px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .sparkle.pop {
+      animation: sparklePop 0.8s ease-out forwards;
+    }
     @keyframes sparklePop {
       0% { opacity: 0; transform: scale(0) translate(0,0); }
       30% { opacity: 1; }
-      100% { opacity: 0; transform: scale(1.4) translate(var(--sx), var(--sy)); }
+      100% { opacity: 0; transform: scale(1.3) translate(var(--sx), var(--sy)); }
     }
 
-    .level-label { margin-top: -6px; position: relative; z-index: 1; }
-    .level-name { font-size: 15px; font-weight: bold; color: #FCE8AE; letter-spacing: 1px; }
-    .level-pct { font-size: 12px; color: rgba(243,233,210,0.55); margin-top: 2px; }
+    /* ===== Level Ring ===== */
+    .level-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .level-ring svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .level-ring circle {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+    .level-ring .bg { stroke: rgba(255,255,255,0.06); }
+    .level-ring .progress {
+      stroke: #F2CD6B;
+      stroke-dasharray: 565.48;
+      stroke-dashoffset: 565.48;
+      transition: stroke-dashoffset 1s ease;
+    }
+    .level-label {
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 600;
+      color: #F2CD6B;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
 
+    /* ===== Cards ===== */
+    .glass {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(242,205,107,0.12);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
-      max-width: 420px;
-      margin: 18px 0;
-      position: relative; z-index: 1;
+      max-width: 400px;
+      margin: 6px 0 12px;
     }
     .stat-card {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(242,205,107,0.15);
-      border-radius: 18px;
-      padding: 14px 10px;
+      text-align: center;
+      padding: 14px 8px;
     }
-    .stat-icon { font-size: 20px; margin-bottom: 4px; }
-    .stat-label { font-size: 11px; color: rgba(243,233,210,0.6); margin-bottom: 4px; }
-    .stat-value { font-size: 18px; font-weight: bold; color: #FCE8AE; }
-    .stat-value.small-unit { font-size: 17px; }
+    .stat-card .value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #FCE8AE;
+    }
+    .stat-card .label {
+      font-size: 11px;
+      color: rgba(243,233,210,0.5);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .stat-card .icon { font-size: 18px; margin-bottom: 2px; }
 
-    .withdraw-panel {
-      background: rgba(19,31,61,0.8);
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin: 6px 0 15px;
+    /* ===== Progress Bar ===== */
+    .progress-section {
       width: 100%;
-      max-width: 420px;
-      border: 1px solid rgba(242,205,107,0.1);
-      position: relative; z-index: 1;
+      max-width: 400px;
+      margin: 4px 0 14px;
     }
-    .withdraw-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .withdraw-title { font-size: 13px; color: #F2CD6B; font-weight: bold; }
-    .withdraw-pct { font-size: 13px; color: #FCE8AE; font-weight: bold; }
-    .progress-track { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #C9A03E, #F2CD6B); border-radius: 10px; transition: width 1s ease, background 0.4s ease; }
-    .progress-fill.unlocked { background: #6FA287; }
-    .withdraw-sub { font-size: 12px; color: rgba(243,233,210,0.6); margin-top: 8px; display: flex; justify-content: space-between; }
-    .withdraw-unlocked-msg { display: none; color: #6FA287; font-weight: bold; font-size: 13px; margin-top: 8px; }
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #C9A03E, #F2CD6B);
+      transition: width 0.8s ease;
+      width: 0%;
+    }
+    .progress-bar .fill.done { background: #6FA287; }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: rgba(243,233,210,0.5);
+      margin-top: 6px;
+    }
+    .progress-info .highlight { color: #FCE8AE; font-weight: 600; }
 
-    .panel {
-      background: rgba(19,31,61,0.8);
-      border-radius: 16px;
-      padding: 20px;
-      margin: 8px 0;
-      width: 100%;
-      max-width: 420px;
-      border: 1px solid rgba(242,205,107,0.1);
-      position: relative; z-index: 1;
-    }
-    .eyebrow { font-size: 12px; color: #F2CD6B; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 10px; }
+    /* ===== Buttons ===== */
     .btn {
       background: linear-gradient(135deg, #C9A03E, #F2CD6B);
       color: #0A1122;
       border: none;
-      padding: 15px 40px;
+      padding: 14px 32px;
       border-radius: 30px;
       font-size: 17px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.15s ease, box-shadow 0.3s ease;
       touch-action: manipulation;
       width: 100%;
+      max-width: 400px;
+      position: relative;
     }
     .btn:active { transform: scale(0.96); }
-    .btn.pulse { animation: btnPulse 1.6s ease-in-out infinite; }
+    .btn.pulse { animation: btnPulse 1.8s ease-in-out infinite; }
     @keyframes btnPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(242,205,107,0.5); }
-      50% { box-shadow: 0 0 0 12px rgba(242,205,107,0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(242,205,107,0.3); }
+      50% { box-shadow: 0 0 0 10px rgba(242,205,107,0); }
     }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
-    .status { margin-top: 12px; font-size: 13px; color: #F2CD6B; }
-    .btn-outline { background: transparent; border: 1px solid rgba(242,205,107,0.4); color: #F2CD6B; }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      animation: none;
+    }
+    .btn .sub {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(242,205,107,0.3);
+      color: #F2CD6B;
+    }
 
-    .achievement {
+    /* ===== Bottom Nav ===== */
+    .bottom-nav {
       position: fixed;
-      top: 20px; left: 50%;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 420px;
+      margin: 0 auto;
+      background: rgba(10,17,34,0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(242,205,107,0.08);
+      display: flex;
+      padding: 6px 0 env(safe-area-inset-bottom);
+      z-index: 10;
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      color: rgba(243,233,210,0.35);
+      font-size: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      transition: color 0.2s;
+      font-family: inherit;
+    }
+    .nav-btn .icon { font-size: 20px; line-height: 1; }
+    .nav-btn.active { color: #F2CD6B; }
+    .nav-btn.active .icon { filter: drop-shadow(0 0 8px rgba(242,205,107,0.2)); }
+
+    /* ===== Achievements Toast ===== */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
       transform: translateX(-50%) translateY(-120px);
       background: linear-gradient(135deg, #1c2b52, #131f3d);
-      border: 1px solid rgba(242,205,107,0.5);
+      border: 1px solid rgba(242,205,107,0.4);
       color: #FCE8AE;
-      padding: 14px 22px;
+      padding: 12px 20px;
       border-radius: 14px;
-      font-size: 14px;
-      font-weight: bold;
-      display: flex; align-items: center; gap: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       z-index: 50;
       transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
       white-space: nowrap;
+      pointer-events: none;
     }
-    .achievement.show { transform: translateX(-50%) translateY(0); }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== Live Badge ===== */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #6FA287;
+      background: rgba(111,162,135,0.12);
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(111,162,135,0.15);
+    }
+    .live-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #6FA287;
+      animation: dotPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    /* ===== Daily Rewards ===== */
+    .daily-grid {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin: 6px 0 4px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .daily-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: rgba(243,233,210,0.3);
+      flex: 1;
+      padding: 4px 0;
+      border-radius: 10px;
+      transition: all 0.3s;
+    }
+    .daily-item .day {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+    .daily-item .amount { font-size: 10px; margin-top: 2px; }
+    .daily-item.done .day { background: #6FA287; color: #fff; }
+    .daily-item.active .day {
+      background: #F2CD6B;
+      color: #0A1122;
+      box-shadow: 0 0 20px rgba(242,205,107,0.25);
+      animation: dailyPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes dailyPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 400px) {
+      .stats-grid { gap: 6px; }
+      .stat-card .value { font-size: 18px; }
+      .stat-card { padding: 10px 4px; }
+    }
   </style>
 </head>
 <body>
 
-  <div id="particleField"></div>
+  <!-- ===== Splash Screen ===== -->
+  <div id="splash">
+    <div class="splash-icon">🤖</div>
+    <div class="splash-title">Jaib<span>Cash</span></div>
+    <div class="splash-sub">Turn Your Time Into Rewards</div>
+    <div class="splash-loader"></div>
+  </div>
 
-  <div class="achievement" id="achievementToast">
+  <!-- ===== Achievement Toast ===== -->
+  <div class="toast" id="toast">
     <span>🏆</span>
-    <span id="achievementText">First Ad Watched</span>
+    <span id="toastText">First Ad Watched</span>
   </div>
 
-  <h1>Jaib <span>Cash</span></h1>
-  <p class="sub">Turn Your Time Into Rewards</p>
+  <!-- ===== App ===== -->
+  <div class="app" id="app">
 
-  <div class="mascot-stage" id="mascotWrap">
-    <svg class="level-ring-svg" viewBox="0 0 260 260">
-      <defs>
-        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#C9A03E"/>
-          <stop offset="100%" stop-color="#F2CD6B"/>
-        </linearGradient>
-      </defs>
-      <circle class="level-ring-bg" cx="130" cy="130" r="120"></circle>
-      <circle class="level-ring-fg" id="levelRingFg" cx="130" cy="130" r="120"
-              stroke-dasharray="754" stroke-dashoffset="754"></circle>
-    </svg>
-    <div class="mascot-glow"></div>
-    <span class="sleep-zzz" id="sleepZzz">💤</span>
-    <img src="mascot.png?v=5" alt="مساعد Jaib Cash" class="mascot-img" id="mascotImg">
-  </div>
-  <div class="level-label">
-    <div class="level-name" id="levelName">⭕ Silver Level</div>
-    <div class="level-pct" id="levelPct">72% إلى Gold</div>
-  </div>
+    <!-- Live Badge -->
+    <div class="live-badge">
+      <span class="dot"></span> 1,245 Active Users Today
+    </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">🪙</div>
-      <div class="stat-label">رصيدك</div>
-      <div class="stat-value small-unit" id="statBalance">128,500</div>
+    <!-- Mascot + Level Ring -->
+    <div class="mascot-wrap" id="mascotWrap">
+      <div class="mascot-glow" id="mascotGlow"></div>
+      <div class="level-ring">
+        <svg viewBox="0 0 180 180">
+          <circle class="bg" cx="90" cy="90" r="90" />
+          <circle class="progress" id="levelProgress" cx="90" cy="90" r="90" />
+        </svg>
+        <div class="level-label" id="levelLabel">🥉 Bronze</div>
+      </div>
+      <span class="sleep-zzz" id="sleepZzz">💤</span>
+      <img src="mascot.png?v=6" alt="Jaib Cash" class="mascot-img" id="mascotImg">
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">💼</div>
-      <div class="stat-label">رصيد المعلن</div>
-      <div class="stat-value">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div class="stat-label">الإحالات</div>
-      <div class="stat-value">12</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🏆</div>
-      <div class="stat-label">المستوى</div>
-      <div class="stat-value" id="statLevel">Silver</div>
-    </div>
-  </div>
 
-  <div class="withdraw-panel">
-    <div class="withdraw-top">
-      <span class="withdraw-title">التقدم نحو السحب</span>
-      <span class="withdraw-pct" id="withdrawPct">6.5%</span>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card glass">
+        <div class="icon">🪙</div>
+        <div class="value" id="balanceDisplay">128,500</div>
+        <div class="label">Points</div>
+      </div>
+      <div class="stat-card glass">
+        <div class="icon">💼</div>
+        <div class="value" id="advertiserBalance">0</div>
+        <div class="label">Advertiser</div>
+      </div>
+      <div class="stat-card glass">
+        <div class="icon">👥</div>
+        <div class="value" id="referralCount">12</div>
+        <div class="label">Referrals</div>
+      </div>
+      <div class="stat-card glass">
+        <div class="icon">🏆</div>
+        <div class="value" id="levelDisplay">Silver</div>
+        <div class="label">Level</div>
+      </div>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="withdrawFill" style="width: 6.5%;"></div>
-    </div>
-    <div class="withdraw-sub">
-      <span>الحد الأدنى: $2</span>
-      <span id="withdrawRemaining">متبقٍ 1,871,500 نقطة</span>
-    </div>
-    <div class="withdraw-unlocked-msg" id="withdrawUnlockedMsg">🎉 تم فتح السحب!</div>
-  </div>
 
-  <div class="panel">
-    <p class="eyebrow">شاهد إعلان</p>
-    <button class="btn pulse" id="watchBtn">🎥 شاهد الآن</button>
-    <div class="status" id="statusLine">المكافأة: +1000 نقطة</div>
-  </div>
+    <!-- Progress Section -->
+    <div class="progress-section glass" style="padding:14px 18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(243,233,210,0.6);margin-bottom:4px;">
+        <span>🚀 Withdrawal Progress</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="fill" id="progressFill"></div>
+      </div>
+      <div class="progress-info">
+        <span>Required: <span class="highlight">2,000,000</span></span>
+        <span id="progressRemain">Remaining: 1,871,500</span>
+      </div>
+    </div>
 
-  <div class="panel">
-    <p class="eyebrow">الدعم</p>
-    <button class="btn btn-outline" id="supportBtn">📞 تواصل مع الدعم</button>
+    <!-- Daily Rewards -->
+    <div class="daily-grid">
+      <div class="daily-item done"><span class="day">1</span><span class="amount">100</span></div>
+      <div class="daily-item done"><span class="day">2</span><span class="amount">150</span></div>
+      <div class="daily-item active"><span class="day">3</span><span class="amount">250</span></div>
+      <div class="daily-item"><span class="day">4</span><span class="amount">400</span></div>
+      <div class="daily-item"><span class="day">5</span><span class="amount">600</span></div>
+      <div class="daily-item"><span class="day">6</span><span class="amount">900</span></div>
+      <div class="daily-item"><span class="day">7</span><span class="amount">1500</span></div>
+    </div>
+
+    <!-- Watch Ad -->
+    <div class="glass" style="width:100%;max-width:400px;padding:18px;margin:8px 0 10px;text-align:center;">
+      <div style="font-size:13px;color:rgba(243,233,210,0.5);margin-bottom:4px;">🎥 Watch Ad</div>
+      <button class="btn pulse" id="watchBtn">
+        Watch Ad
+        <span class="sub">Reward: +1000 Points</span>
+      </button>
+      <div class="status" id="statusLine" style="margin-top:10px;font-size:13px;color:#F2CD6B;">Ready to watch</div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="glass" style="width:100%;max-width:400px;padding:14px 18px;margin:4px 0 8px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#FCE8AE;margin-bottom:8px;">
+        <span>📋 Tasks</span>
+        <span style="font-size:11px;color:rgba(243,233,210,0.4);">3 available</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span>Join Channel</span>
+          <span style="color:#F2CD6B;font-weight:600;">+500</span>
+          <span style="font-size:11px;color:#F2CD6B;background:rgba(242,205,107,0.1);padding:2px 12px;border-radius:12px;">Pending</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span>Invite Friend</span>
+          <span style="color:#F2CD6B;font-weight:600;">+1000</span>
+          <span style="font-size:11px;color:#F2CD6B;background:rgba(242,205,107,0.1);padding:2px 12px;border-radius:12px;">Pending</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;">
+          <span>Install App</span>
+          <span style="color:#F2CD6B;font-weight:600;">+2000</span>
+          <span style="font-size:11px;color:#6FA287;background:rgba(111,162,135,0.15);padding:2px 12px;border-radius:12px;">Completed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-view="home"><span class="icon">🏠</span>Home</button>
+      <button class="nav-btn" data-view="tasks"><span class="icon">📋</span>Tasks</button>
+      <button class="nav-btn" data-view="wallet"><span class="icon">💰</span>Wallet</button>
+      <button class="nav-btn" data-view="referral"><span class="icon">👥</span>Referral</button>
+      <button class="nav-btn" data-view="more"><span class="icon">⚙️</span>More</button>
+    </nav>
   </div>
 
   <script>
+    // ===== Telegram WebApp =====
     const tg = window.Telegram?.WebApp;
     if (tg) { tg.ready(); tg.expand(); }
 
+    // ===== Elements =====
+    const splash = document.getElementById('splash');
+    const app = document.getElementById('app');
     const mascot = document.getElementById('mascotImg');
     const mascotWrap = document.getElementById('mascotWrap');
+    const mascotGlow = document.getElementById('mascotGlow');
     const sleepZzz = document.getElementById('sleepZzz');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressRemain = document.getElementById('progressRemain');
+    const levelProgress = document.getElementById('levelProgress');
+    const levelLabel = document.getElementById('levelLabel');
     const statusLine = document.getElementById('statusLine');
     const watchBtn = document.getElementById('watchBtn');
-    const achievementToast = document.getElementById('achievementToast');
-    const achievementText = document.getElementById('achievementText');
-    const particleField = document.getElementById('particleField');
-    const statBalance = document.getElementById('statBalance');
-    const levelRingFg = document.getElementById('levelRingFg');
-    const levelName = document.getElementById('levelName');
-    const levelPct = document.getElementById('levelPct');
-    const statLevel = document.getElementById('statLevel');
-    const withdrawPct = document.getElementById('withdrawPct');
-    const withdrawFill = document.getElementById('withdrawFill');
-    const withdrawRemaining = document.getElementById('withdrawRemaining');
-    const withdrawUnlockedMsg = document.getElementById('withdrawUnlockedMsg');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
 
+    // ===== State =====
     let balance = 128500;
+    const THRESHOLD = 2000000;
     let cooldownActive = false;
 
-    const LEVELS = [
-      { name: 'Bronze',    min: 0 },
-      { name: 'Silver',    min: 50000 },
-      { name: 'Gold',      min: 150000 },
-      { name: 'Platinum',  min: 400000 },
-      { name: 'Diamond',   min: 800000 },
-      { name: 'Master',    min: 1500000 },
-      { name: 'Legendary', min: 3000000 }
-    ];
-    const WITHDRAW_REQUIRED = 2000000;
-    const RING_CIRC = 754;
+    // ===== Splash Screen =====
+    setTimeout(() => {
+      splash.classList.add('hide');
+      app.classList.add('show');
+      setTimeout(() => splash.remove(), 600);
+    }, 1500);
 
-    function updateLevel(bal) {
-      let current = LEVELS[0];
-      let next = LEVELS[1];
-      for (let i = 0; i < LEVELS.length; i++) {
-        if (bal >= LEVELS[i].min) {
-          current = LEVELS[i];
-          next = LEVELS[i + 1] || null;
-        }
-      }
-      let pct = 100;
-      if (next) pct = ((bal - current.min) / (next.min - current.min)) * 100;
-      pct = Math.max(0, Math.min(100, pct));
-      const offset = RING_CIRC - (RING_CIRC * pct / 100);
-      levelRingFg.style.strokeDashoffset = offset;
-      levelName.textContent = `⭕ ${current.name} Level`;
-      levelPct.textContent = next ? `${Math.round(pct)}% إلى ${next.name}` : 'أعلى مستوى!';
-      statLevel.textContent = current.name;
+    // ===== Particles =====
+    for (let i = 0; i < 16; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.bottom = '-4px';
+      p.style.animationDuration = (10 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 12) + 's';
+      document.body.appendChild(p);
     }
 
-    function updateWithdraw(bal) {
-      const pct = Math.min(100, (bal / WITHDRAW_REQUIRED) * 100);
-      withdrawPct.textContent = pct.toFixed(1) + '%';
-      withdrawFill.style.width = pct + '%';
-      const remaining = Math.max(0, WITHDRAW_REQUIRED - bal);
-      if (remaining <= 0) {
-        withdrawFill.classList.add('unlocked');
-        withdrawRemaining.style.display = 'none';
-        withdrawUnlockedMsg.style.display = 'block';
-      } else {
-        withdrawFill.classList.remove('unlocked');
-        withdrawRemaining.style.display = 'inline';
-        withdrawUnlockedMsg.style.display = 'none';
-        withdrawRemaining.textContent = `متبقٍ ${remaining.toLocaleString()} نقطة`;
-      }
-    }
-
-    function spawnParticles(count) {
-      for (let i = 0; i < count; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + 'vw';
-        p.style.bottom = '-10px';
-        p.style.animationDuration = (8 + Math.random() * 10) + 's';
-        p.style.animationDelay = (Math.random() * 10) + 's';
-        particleField.appendChild(p);
-      }
-    }
-    spawnParticles(18);
-
+    // ===== Mascot Actions =====
     function mascotBounce() {
       mascot.classList.remove('bounce');
       void mascot.offsetWidth;
@@ -407,7 +677,7 @@
       void mascot.offsetWidth;
       mascot.classList.add('celebrate');
       spawnSparkles();
-      setTimeout(() => mascot.classList.remove('celebrate'), 1000);
+      setTimeout(() => mascot.classList.remove('celebrate'), 900);
     }
     function spawnSparkles() {
       const symbols = ['✨','⭐','💰'];
@@ -416,24 +686,63 @@
         s.className = 'sparkle';
         s.textContent = symbols[Math.floor(Math.random() * symbols.length)];
         const angle = (Math.PI * 2 * i) / 8;
-        const dist = 90 + Math.random() * 30;
+        const dist = 60 + Math.random() * 30;
         s.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
         s.style.setProperty('--sy', Math.sin(angle) * dist + 'px');
         s.style.left = '50%';
         s.style.top = '50%';
         mascotWrap.appendChild(s);
         requestAnimationFrame(() => s.classList.add('pop'));
-        setTimeout(() => s.remove(), 950);
+        setTimeout(() => s.remove(), 850);
       }
     }
-    function enterSleep() { mascot.classList.add('sleeping'); sleepZzz.classList.add('show'); }
-    function exitSleep() { mascot.classList.remove('sleeping'); sleepZzz.classList.remove('show'); }
+    function enterSleep() {
+      mascot.classList.add('sleeping');
+      sleepZzz.classList.add('show');
+      mascotGlow.style.opacity = '0.12';
+    }
+    function exitSleep() {
+      mascot.classList.remove('sleeping');
+      sleepZzz.classList.remove('show');
+      mascotGlow.style.opacity = '';
+    }
 
-    mascot.addEventListener('click', function (e) {
+    mascot.addEventListener('click', (e) => {
       e.preventDefault();
-      if (cooldownActive) return;
-      mascotBounce();
+      if (!cooldownActive) mascotBounce();
     });
+
+    // ===== Update UI =====
+    function updateUI() {
+      const pct = Math.min(100, (balance / THRESHOLD) * 100);
+      progressFill.style.width = pct + '%';
+      progressFill.classList.toggle('done', pct >= 100);
+      progressPercent.textContent = pct.toFixed(1) + '%';
+      const remain = Math.max(0, THRESHOLD - balance);
+      progressRemain.textContent = 'Remaining: ' + remain.toLocaleString();
+
+      // Level ring
+      const circumference = 565.48;
+      const offset = circumference - (pct / 100) * circumference;
+      levelProgress.style.strokeDashoffset = offset;
+
+      // Level label
+      const levels = [
+        { name: '🥉 Bronze', min: 0 },
+        { name: '🥈 Silver', min: 10000 },
+        { name: '🥇 Gold', min: 50000 },
+        { name: '💎 Platinum', min: 200000 },
+        { name: '👑 Diamond', min: 500000 },
+        { name: '🚀 Master', min: 1000000 },
+        { name: '🔥 Legendary', min: 2000000 }
+      ];
+      let currentLevel = levels[0];
+      for (const l of levels) {
+        if (balance >= l.min) currentLevel = l;
+      }
+      levelLabel.textContent = currentLevel.name;
+      document.getElementById('levelDisplay').textContent = currentLevel.name.replace(/[^\w\s]/g, '').trim();
+    }
 
     function animateBalance(from, to, duration) {
       const start = performance.now();
@@ -441,79 +750,83 @@
         const progress = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(from + (to - from) * eased);
-        statBalance.textContent = current.toLocaleString();
-        updateLevel(current);
-        updateWithdraw(current);
+        balanceDisplay.textContent = current.toLocaleString();
         if (progress < 1) requestAnimationFrame(step);
         else {
-          statBalance.textContent = to.toLocaleString();
-          updateLevel(to);
-          updateWithdraw(to);
+          balanceDisplay.textContent = to.toLocaleString();
+          updateUI();
         }
       }
       requestAnimationFrame(step);
     }
 
-    function showAchievement(text) {
-      achievementText.textContent = text;
-      achievementToast.classList.add('show');
-      setTimeout(() => achievementToast.classList.remove('show'), 3000);
-    }
-    function checkFirstAdAchievement() {
-      if (!localStorage.getItem('jc_first_ad_seen')) {
-        localStorage.setItem('jc_first_ad_seen', '1');
-        setTimeout(() => showAchievement('أول إعلان! First Ad Watched'), 1200);
-      }
+    function showToast(text) {
+      toastText.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
     }
 
+    // ===== Watch Ad =====
     watchBtn.addEventListener('click', function (e) {
       e.preventDefault();
       if (cooldownActive) return;
+
       cooldownActive = true;
       watchBtn.disabled = true;
       watchBtn.classList.remove('pulse');
-      statusLine.textContent = '⏳ جاري تحميل الإعلان...';
+      statusLine.textContent = '⏳ Loading ad...';
       statusLine.style.color = '#F2CD6B';
       mascotBounce();
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
       setTimeout(() => {
         const oldBalance = balance;
         balance += 1000;
         animateBalance(oldBalance, balance, 900);
-        statusLine.textContent = '✅ تمت المشاهدة! +1000 نقطة';
+        statusLine.textContent = '✅ +1000 Points!';
         statusLine.style.color = '#6FA287';
         mascotCelebrate();
-        checkFirstAdAchievement();
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
         let remaining = 15;
-        const cooldownInterval = setInterval(() => {
+        const interval = setInterval(() => {
           remaining--;
           if (remaining > 0) {
-            watchBtn.textContent = `متاح خلال ${remaining} ث`;
+            watchBtn.textContent = `⏳ ${remaining}s`;
           } else {
-            clearInterval(cooldownInterval);
-            watchBtn.textContent = '🎥 شاهد الآن';
+            clearInterval(interval);
+            watchBtn.textContent = 'Watch Ad';
             watchBtn.disabled = false;
             watchBtn.classList.add('pulse');
-            statusLine.textContent = 'المكافأة: +1000 نقطة';
+            statusLine.textContent = 'Ready to watch';
             statusLine.style.color = '#F2CD6B';
             cooldownActive = false;
             exitSleep();
           }
         }, 1000);
-        setTimeout(enterSleep, 1000);
+        setTimeout(enterSleep, 1200);
       }, 2000);
     });
 
-    document.getElementById('supportBtn').addEventListener('click', function (e) {
-      e.preventDefault();
+    // ===== Bottom Nav =====
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        showToast('📱 ' + btn.dataset.view.charAt(0).toUpperCase() + btn.dataset.view.slice(1));
+      });
+    });
+
+    // ===== Support =====
+    document.querySelector('.btn-outline')?.addEventListener('click', () => {
       window.open('https://t.me/abkhali', '_blank');
     });
 
-    updateLevel(balance);
-    updateWithdraw(balance);
-
-    console.log('JaibCash Home Screen loaded!');
+    // ===== Init =====
+    balanceDisplay.textContent = balance.toLocaleString();
+    updateUI();
+    console.log('JaibCash UI v1.0 loaded');
   </script>
 
 </body>
