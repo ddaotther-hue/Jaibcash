@@ -1,99 +1,90 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sqlite3
 import os
 import logging
-import time
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "data", "jaibcash.db")
+DB_PATH = os.getenv("DB_PATH", "data/jaibcash.db")
 
 def get_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, timeout=20.0)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def ensure_tables():
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute('CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, username TEXT, first_name TEXT, language TEXT DEFAULT "ar", approved_tasks INTEGER DEFAULT 0, level INTEGER DEFAULT 0, is_banned INTEGER DEFAULT 0, trust_score INTEGER DEFAULT 50, joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS balances (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, total_earned INTEGER DEFAULT 0, total_withdrawn INTEGER DEFAULT 0, referral_earnings INTEGER DEFAULT 0)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT, amount INTEGER, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS advertiser_wallets (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, frozen_balance REAL DEFAULT 0.0, total_spent REAL DEFAULT 0.0)')
-        conn.commit()
-        conn.close()
-        logger.info("✅ الجداول جاهزة")
-        return True
-    except Exception as e:
-        logger.error(f"❌ فشل إنشاء الجداول: {e}")
-        return False
-
-def execute_with_retry(operations, max_retries=5):
-    for attempt in range(max_retries):
-        try:
-            conn = get_db()
-            cursor = conn.cursor()
-            for op in operations:
-                cursor.execute(op['sql'], op['params'])
-            conn.commit()
-            conn.close()
-            return True
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e) and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 0.5
-                logger.warning(f"⚠️ قفل، إعادة المحاولة {attempt+1}/{max_retries} بعد {wait_time} ثانية...")
-                time.sleep(wait_time)
-                continue
-            else:
-                logger.error(f"❌ فشل: {e}")
-                return False
-        except Exception as e:
-            logger.error(f"❌ خطأ: {e}")
-            return False
-    return False
-
-def add_points(user_id, points):
-    operations = [
-        {'sql': 'INSERT OR IGNORE INTO users (user_id) VALUES (?)', 'params': (user_id,)},
-        {'sql': 'INSERT OR IGNORE INTO balances (user_id, points, total_earned) VALUES (?, ?, ?)', 'params': (user_id, 0, 0)},
-        {'sql': 'INSERT OR IGNORE INTO advertiser_wallets (user_id, balance, frozen_balance) VALUES (?, ?, ?)', 'params': (user_id, 0.0, 0.0)},
-        {'sql': 'UPDATE balances SET points = points + ?, total_earned = total_earned + ? WHERE user_id = ?', 'params': (points, points, user_id)},
-        {'sql': 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, "ad", ?, "مشاهدة إعلان (AdsGram)")', 'params': (user_id, points)}
-    ]
-    if execute_with_retry(operations):
-        logger.info(f"✅ تم إضافة {points} نقطة للمستخدم {user_id}")
-        return True
-    return False
-
-@app.route('/reward', methods=['GET', 'POST'])
-def reward():
-    user_id = request.args.get('userId')
-    if not user_id:
-        return jsonify({"error": "Missing userId"}), 400
-    try:
-        user_id = int(user_id)
-    except ValueError:
-        return jsonify({"error": "Invalid userId"}), 400
-    if add_points(user_id, 1000):
-        return jsonify({"status": "success", "points": 1000}), 200
-    return jsonify({"error": "Database error"}), 500
-
+# ===== Healthcheck =====
 @app.route('/health', methods=['GET'])
 def health():
+    return jsonify({"status": "ok"}), 200
+
+# ===== API: جلب بيانات المستخدم =====
+@app.route('/api/profile', methods=['GET'])
+def profile():
+    user_id = request.args.get('user_id', 1488610580)
     try:
-        conn = get_db()
-        conn.close()
-        return jsonify({"status": "ok", "db": "connected"}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "db": str(e)}), 500
+        user_id = int(user_id)
+    except:
+        return jsonify({"error": "Invalid user_id"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # الرصيد
+    cursor.execute('SELECT points FROM balances WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    balance = row['points'] if row else 0
+
+    # الإحالات
+    cursor.execute('SELECT COUNT(*) as count, COALESCE(SUM(total_earned), 0) as earnings FROM referrals WHERE referrer_id = ? AND status = "active"', (user_id,))
+    ref = cursor.fetchone()
+    referrals = ref['count'] if ref else 0
+    referral_earnings = ref['earnings'] if ref else 0
+
+    conn.close()
+
+    return jsonify({
+        "balance": balance,
+        "referrals": referrals,
+        "referral_earnings": referral_earnings,
+        "advertiser_balance": 0
+    })
+
+# ===== API: مشاهدة إعلان =====
+@app.route('/api/watch-ad', methods=['POST'])
+def watch_ad():
+    data = request.get_json()
+    user_id = data.get('user_id', 1488610580)
+    try:
+        user_id = int(user_id)
+    except:
+        return jsonify({"error": "Invalid user_id"}), 400
+
+    points = 1000
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE balances SET points = points + ?, total_earned = total_earned + ? WHERE user_id = ?', (points, points, user_id))
+    cursor.execute('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, "ad", ?, "مشاهدة إعلان")', (user_id, points))
+
+    cursor.execute('SELECT points FROM balances WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    new_balance = row['points'] if row else 0
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "success": True,
+        "points": points,
+        "balance": new_balance
+    })
 
 if __name__ == '__main__':
-    ensure_tables()
-    logger.info("🚀 تشغيل سيرفر المكافآت على المنفذ 8001")
-    app.run(host='0.0.0.0', port=8002, debug=False)
+    app.run(host='0.0.0.0', port=8001, debug=False)
