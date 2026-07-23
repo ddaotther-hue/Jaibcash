@@ -45,7 +45,7 @@ def health():
 @web_app.route('/')
 def serve_miniapp():
     try:
-        return send_file('index.html')
+        return send_file("public/miniapp.html")
     except:
         return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
 
