@@ -44,12 +44,17 @@ def profile():
             logger.warning(f"advertiser balance fetch failed for {user_id}: {e}")
             adv_balance = 0
 
-        # ملاحظة: عدّل أسماء المفاتيح هنا حسب الشكل الفعلي لـ user و referral_stats
+        # sqlite3.Row يتحول لـ dict عادي عشان يصير قابل للتحويل لـ JSON
+        user_dict = dict(user) if user is not None else {}
+
         return jsonify({
             "user_id": user_id,
             "balance": balance,
-            "user_raw": user if isinstance(user, dict) else str(user),
-            "referral_stats_raw": referral_stats,
+            "level": user_dict.get("level"),
+            "username": user_dict.get("username"),
+            "first_name": user_dict.get("first_name"),
+            "user_raw": user_dict,
+            "referral_stats": referral_stats if isinstance(referral_stats, dict) else dict(referral_stats),
             "advertiser_balance": adv_balance,
         }), 200
 
