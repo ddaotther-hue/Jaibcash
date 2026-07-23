@@ -27,6 +27,8 @@ from handlers_tasks import get_task_execution_handler
 
 # ===== خادم ويب صغير لـ Healthcheck =====
 web_app = Flask(__name__)
+from api_routes import api_bp
+web_app.register_blueprint(api_bp)
 
 @web_app.route('/')
 def index():
