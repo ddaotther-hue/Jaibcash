@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
 from database import create_user, set_language, add_referral, is_banned, get_user, get_referral_stats
 from utils import check_channel_membership, extract_referrer_id
@@ -9,15 +9,14 @@ from config import REQUIRED_CHANNEL
 
 logger = logging.getLogger(__name__)
 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
-
+    
     if is_banned(user_id):
-        await update.message.reply_text(" 🚫 تم حظر حسابك. تواصل مع الإدارة.")
+        await update.message.reply_text("🚫 تم حظر حسابك. تواصل مع الإدارة.")
         return
-
+    
     # ===== حفظ معرف الإحالة قبل أي شيء حتى لا يضيع =====
     if context.args:
         candidate_ref = extract_referrer_id(context.args[0])
@@ -30,7 +29,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🌐 اختر لغتك المفضلة / Please choose your language:",
         reply_markup=keyboard
     )
-
 
 async def handle_language_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -54,12 +52,16 @@ async def handle_language_selection(update: Update, context: ContextTypes.DEFAUL
 
     if not await check_channel_membership(update, context):
         channel_link = REQUIRED_CHANNEL if REQUIRED_CHANNEL.startswith('@') else f"https://t.me/{REQUIRED_CHANNEL}"
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(t(user_id, 'btn_check_sub'), callback_data="check_sub")]])
-        await query.message.reply_text(t(user_id, 'not_subscribed', channel=channel_link), reply_markup=keyboard)
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton(t(user_id, 'btn_check_sub'), callback_data="check_sub")
+        ]])
+        await query.message.reply_text(
+            t(user_id, 'not_subscribed', channel=channel_link),
+            reply_markup=keyboard
+        )
         return
 
     await _finish_start(update, context, user_id, query.from_user)
-
 
 async def _finish_start(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, user):
     create_user(user_id, user.username, user.first_name, 'ar')
@@ -69,33 +71,50 @@ async def _finish_start(update: Update, context: ContextTypes.DEFAULT_TYPE, user
     if not ref_id and context.args:
         ref_id = extract_referrer_id(context.args[0])
     if ref_id and ref_id != user_id:
-            add_referral(ref_id, user_id)
-            logger.info(f"✅ إحالة جديدة: {ref_id} → {user_id}")
+        add_referral(ref_id, user_id)
+        logger.info(f"✅ إحالة جديدة: {ref_id} → {user_id}")
 
-            # ===== إرسال إشعار للمحيل =====
-            try:
-                new_user = get_user(user_id)
-                stats = get_referral_stats(ref_id)
-                referrer = get_user(ref_id)
+        # ===== إرسال إشعار للمحيل =====
+        try:
+            new_user = get_user(user_id)
+            stats = get_referral_stats(ref_id)
+            referrer = get_user(ref_id)
 
-                await context.bot.send_message(
-                    chat_id=ref_id,
-                    text=f"🔔 **إحالة جديدة!**\n\n"
-                         f"👤 {new_user['first_name'] or 'مستخدم جديد'} دخل عبر رابط إحالتك.\n"
-                         f"🆔 المعرف: `{user_id}`\n"
-                         f"📊 عدد الإحالات حتى الآن: {stats['total']}\n\n"
-                         f"💡 سيحصل على مكافأة عند إكمال أول مهمة."
-                )
-            except Exception as e:
-                logger.error(f"❌ فشل إرسال إشعار للمحيل {ref_id}: {e}")
+            await context.bot.send_message(
+                chat_id=ref_id,
+                text=f"🔔 **إحالة جديدة!**\n\n"
+                     f"👤 {new_user['first_name'] or 'مستخدم جديد'} دخل عبر رابط إحالتك.\n"
+                     f"🆔 المعرف: `{user_id}`\n"
+                     f"📊 عدد الإحالات حتى الآن: {stats['total']}\n\n"
+                     f"💡 سيحصل على مكافأة عند إكمال أول مهمة."
+            )
+        except Exception as e:
+            logger.error(f"❌ فشل إرسال إشعار للمحيل {ref_id}: {e}")
 
+    # ===== إرسال رسالة الترحيب مع زر فتح التطبيق =====
     reply_keyboard = get_reply_keyboard(user_id)
+    
+    # إضافة زر Mini App
+    mini_app_keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton(
+            "🚀 فتح التطبيق", 
+            web_app=WebAppInfo(url="https://jaibcash-production.up.railway.app/")
+        )
+    ]])
+
     target_message = update.message if update.message else update.callback_query.message
+    
+    # رسالة الترحيب مع الزر
     await target_message.reply_text(
-        t(user_id, 'welcome_main'),
+        t(user_id, 'welcome_main') + "\n\n🤖 اضغط على الزر لفتح التطبيق والبدء في كسب النقاط!",
+        reply_markup=mini_app_keyboard
+    )
+    
+    # لوحة المفاتيح الأساسية
+    await target_message.reply_text(
+        "📱 يمكنك أيضاً استخدام الأزرار أدناه للتحكم بالبوت:",
         reply_markup=reply_keyboard
     )
-
 
 async def check_subscription_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query

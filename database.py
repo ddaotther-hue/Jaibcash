@@ -502,3 +502,260 @@ def get_task_submission_counts(task_id):
     for r in rows:
         counts[r['status']] = r['cnt']
     return counts
+
+# ===== دوال API الإضافية للميني آب =====
+
+def get_leaderboard_api(limit=10):
+    """الحصول على قائمة المتصدرين (نسخة API)"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT u.user_id, u.username, u.first_name, b.points as balance, u.level
+        FROM balances b 
+        JOIN users u ON u.user_id = b.user_id 
+        WHERE u.is_banned = 0 
+        ORDER BY b.points DESC 
+        LIMIT ?
+    ''', (limit,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def get_transactions_api(user_id, limit=20):
+    """الحصول على سجل المعاملات (نسخة API)"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM transactions 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT ?
+    ''', (user_id, limit))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def add_points_to_user(user_id, points, reason):
+    """إضافة نقاط للمستخدم مع تسجيل المعاملة"""
+    if points <= 0:
+        return
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE balances SET points = points + ?, total_earned = total_earned + ? 
+        WHERE user_id = ?
+    ''', (points, points, user_id))
+    cursor.execute('''
+        INSERT INTO transactions (user_id, type, amount, description) 
+        VALUES (?, 'earn', ?, ?)
+    ''', (user_id, points, reason))
+    conn.commit()
+    conn.close()
+
+def claim_reward(user_id):
+    """سحب النقاط اليومي"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT last_claim FROM users WHERE user_id = ?
+    ''', (user_id,))
+    row = cursor.fetchone()
+    
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN last_claim TIMESTAMP')
+        conn.commit()
+    except:
+        pass
+    
+    if row and row[0]:
+        last_claim = datetime.fromisoformat(row[0])
+        if (now - last_claim).total_seconds() < 86400:
+            conn.close()
+            raise Exception("تم السحب اليومي مسبقاً")
+    
+    points = 15
+    cursor.execute('''
+        UPDATE users SET last_claim = ? WHERE user_id = ?
+    ''', (now.isoformat(), user_id))
+    cursor.execute('''
+        UPDATE balances SET points = points + ?, total_earned = total_earned + ? 
+        WHERE user_id = ?
+    ''', (points, points, user_id))
+    cursor.execute('''
+        INSERT INTO transactions (user_id, type, amount, description) 
+        VALUES (?, 'earn', ?, 'سحب يومي')
+    ''', (user_id, points))
+    conn.commit()
+    conn.close()
+    return {"points": points, "message": "تم السحب اليومي"}
+
+def withdraw_points(user_id, amount):
+    """طلب سحب النقود"""
+    balance = get_balance(user_id)
+    if balance < amount:
+        raise Exception("الرصيد غير كافٍ")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE balances SET points = points - ?, total_withdrawn = total_withdrawn + ? 
+        WHERE user_id = ?
+    ''', (amount, amount, user_id))
+    cursor.execute('''
+        INSERT INTO transactions (user_id, type, amount, description) 
+        VALUES (?, 'withdraw', ?, 'طلب سحب')
+    ''', (user_id, amount))
+    conn.commit()
+    conn.close()
+    return {"amount": amount, "status": "pending"}
+
+def get_checkin_status(user_id):
+    """التحقق من حالة التسجيل اليومي"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT streak, last_checkin FROM daily_checkins WHERE user_id = ?
+    ''', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        return {"can_checkin": True, "last_checkin": None, "streak": 0}
+    
+    from datetime import datetime, timedelta
+    last_checkin = row['last_checkin']
+    streak = row['streak'] or 1
+    
+    if last_checkin:
+        last = datetime.fromisoformat(last_checkin)
+        now = datetime.now()
+        diff = (now - last).total_seconds()
+        
+        if diff < 86400:
+            return {"can_checkin": False, "last_checkin": last_checkin, "streak": streak}
+        elif diff < 172800:
+            streak += 1
+        else:
+            streak = 1
+    else:
+        streak = 1
+    
+    return {"can_checkin": True, "last_checkin": last_checkin, "streak": streak}
+
+def do_checkin(user_id):
+    """تنفيذ التسجيل اليومي"""
+    status = get_checkin_status(user_id)
+    if not status.get('can_checkin'):
+        raise Exception("لا يمكن التسجيل اليومي الآن")
+    
+    from datetime import datetime
+    points = 10 + status.get('streak', 1) * 2
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO daily_checkins (user_id, streak, last_checkin) 
+        VALUES (?, ?, ?)
+    ''', (user_id, status.get('streak', 1), datetime.now().isoformat()))
+    cursor.execute('''
+        UPDATE balances SET points = points + ?, total_earned = total_earned + ? 
+        WHERE user_id = ?
+    ''', (points, points, user_id))
+    cursor.execute('''
+        INSERT INTO transactions (user_id, type, amount, description) 
+        VALUES (?, 'earn', ?, 'تسجيل يومي')
+    ''', (user_id, points))
+    conn.commit()
+    conn.close()
+    return {"points": points, "streak": status.get('streak', 1)}
+
+def get_referrals_list(user_id):
+    """الحصول على قائمة الإحالات"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT u.user_id, u.username, u.first_name, u.joined_at, b.points as balance
+        FROM referrals r
+        JOIN users u ON u.user_id = r.referred_id
+        LEFT JOIN balances b ON b.user_id = u.user_id
+        WHERE r.referrer_id = ?
+        ORDER BY r.joined_at DESC
+    ''', (user_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def get_available_tasks(user_id):
+    """المهام المتاحة للمستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM tasks 
+        WHERE status = 'active'
+        AND id NOT IN (
+            SELECT task_id FROM task_submissions 
+            WHERE user_id = ? AND status IN ('pending', 'approved')
+        )
+    ''', (user_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def get_user_tasks(user_id):
+    """مهام المستخدم الحالية"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT t.*, ts.status as submission_status, ts.submitted_at, ts.points_awarded
+        FROM task_submissions ts
+        JOIN tasks t ON ts.task_id = t.id
+        WHERE ts.user_id = ?
+        ORDER BY ts.submitted_at DESC
+    ''', (user_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def get_user_level(user_id):
+    """مستوى المستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT level FROM users WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['level'] if row else 0
+
+def get_user_stats(user_id):
+    """إحصائيات المستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT 
+            COUNT(DISTINCT ts.task_id) as total_tasks,
+            COALESCE(SUM(ts.points_awarded), 0) as total_earned,
+            (SELECT COUNT(*) FROM referrals WHERE referrer_id = ?) as total_referrals
+        FROM task_submissions ts
+        WHERE ts.user_id = ? AND ts.status = 'approved'
+    ''', (user_id, user_id))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else {}
+
+def get_user_achievements(user_id):
+    """إنجازات المستخدم"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT achievement_id, unlocked_at FROM achievements 
+        WHERE user_id = ?
+        ORDER BY unlocked_at DESC
+    ''', (user_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def get_referral_link(user_id):
+    """رابط الإحالة للمستخدم"""
+    return f"https://t.me/JaibCashBot?start=ref_{user_id}"

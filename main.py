@@ -3,7 +3,7 @@ import threading
 import os
 import asyncio
 import time
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_file
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -25,9 +25,13 @@ from handlers_callback import handle_callback, handle_message
 from task_creation import get_task_creation_handler, init_task_creation
 from handlers_tasks import get_task_execution_handler
 
+# ===== استيراد API =====
+from api_routes import api_bp
+
 # ===== خادم ويب صغير لـ Healthcheck =====
 web_app = Flask(__name__)
-from api_routes import api_bp
+
+# ===== تسجيل Blueprint API =====
 web_app.register_blueprint(api_bp)
 
 @web_app.route('/')
@@ -37,6 +41,13 @@ def index():
 @web_app.route('/health')
 def health():
     return jsonify({"status": "ok"}), 200
+
+@web_app.route('/')
+def serve_miniapp():
+    try:
+        return send_file('index.html')
+    except:
+        return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
@@ -113,18 +124,17 @@ def main():
     application.add_error_handler(error_handler)
 
     logger.info("✅ JaibCash Bot يعمل الآن...")
-    
-    # تشغيل polling مع event loop
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
-    loop.run_until_complete(application.initialize())
-    loop.run_until_complete(application.start())
-    loop.run_until_complete(application.updater.start_polling())
-    loop.run_forever()
+    # ===== تشغيل البوت =====
+    try:
+        logger.info("🚀 بدء تشغيل البوت...")
+        application.run_polling(
+            allowed_updates=None,
+            drop_pending_updates=True,
+            stop_signals=None
+        )
+    except Exception as e:
+        logger.error(f"❌ خطأ في البوت: {e}")
 
 if __name__ == "__main__":
     main()
