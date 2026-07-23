@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from i18n import t
 
 def get_reply_keyboard(user_id):
@@ -6,7 +6,8 @@ def get_reply_keyboard(user_id):
         [KeyboardButton(t(user_id, 'btn_balance')), KeyboardButton(t(user_id, 'btn_watch')), KeyboardButton(t(user_id, 'btn_tasks'))],
         [KeyboardButton(t(user_id, 'btn_referral')), KeyboardButton(t(user_id, 'btn_checkin')), KeyboardButton(t(user_id, 'btn_rank'))],
         [KeyboardButton(t(user_id, 'btn_withdraw')), KeyboardButton(t(user_id, 'btn_account')), KeyboardButton(t(user_id, 'btn_rewards'))],
-        [KeyboardButton(t(user_id, 'btn_advertiser_wallet')), KeyboardButton(t(user_id, 'btn_support')), KeyboardButton(t(user_id, 'btn_privacy'))]
+        [KeyboardButton(t(user_id, 'btn_advertiser_wallet')), KeyboardButton(t(user_id, 'btn_support')), KeyboardButton(t(user_id, 'btn_privacy'))],
+        [KeyboardButton("🚀 افتح التطبيق", web_app=WebAppInfo(url="https://ddaotther-hue.github.io/Jaibcash/"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
