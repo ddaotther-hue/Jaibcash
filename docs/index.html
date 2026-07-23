@@ -6,31 +6,10 @@
   <title>Jaib Cash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* ===== Reset & Base ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0A1122;
-      color: #F3E9D2;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    body { background: #0A1122; color: #F3E9D2; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; display: flex; align-items: center; justify-content: center; }
 
-    /* ===== Splash Screen ===== */
-    #splash {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: radial-gradient(ellipse at 50% 40%, #131F3D, #0A1122 70%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
+    #splash { position: fixed; inset: 0; z-index: 9999; background: radial-gradient(ellipse at 50% 40%, #131F3D, #0A1122 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease, transform 0.6s ease; }
     #splash.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
     .splash-icon { font-size: 80px; margin-bottom: 12px; animation: splashFloat 2s ease-in-out infinite; filter: drop-shadow(0 0 40px rgba(201,160,62,0.3)); }
     @keyframes splashFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-12px) scale(1.04); } }
@@ -41,31 +20,25 @@
     .splash-loader::after { content: ''; display: block; width: 40%; height: 100%; background: linear-gradient(90deg, #C9A03E, #F2CD6B, #FCE8AE); border-radius: 4px; animation: loaderSlide 1.2s ease-in-out infinite; }
     @keyframes loaderSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
 
-    /* ===== App Container ===== */
     .app { max-width: 420px; width: 100%; padding: 16px 16px 80px; display: none; flex-direction: column; align-items: center; }
     .app.show { display: flex; }
 
-    /* ===== Particles ===== */
     .particle { position: fixed; width: 3px; height: 3px; background: #F2CD6B; border-radius: 50%; opacity: 0.3; pointer-events: none; animation: floatUp linear infinite; }
     @keyframes floatUp { 0% { transform: translateY(0) translateX(0); opacity: 0; } 10% { opacity: 0.5; } 90% { opacity: 0.2; } 100% { transform: translateY(-100vh) translateX(20px); opacity: 0; } }
 
-    /* ===== Glass ===== */
-    .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(242,205,107,0.10); border-radius: 18px; padding: 16px 18px; }
+    .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(242,205,107,0.10); border-radius: 18px; padding: 16px 18px; }
 
-    /* ===== Welcome ===== */
     .welcome { font-size: 18px; font-weight: 600; color: #FCE8AE; margin-bottom: 4px; width: 100%; max-width: 400px; text-align: right; }
     .welcome span { color: rgba(243,233,210,0.4); font-weight: 400; font-size: 14px; }
 
-    /* ===== Live Badge ===== */
     .live-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #6FA287; background: rgba(111,162,135,0.12); padding: 6px 18px; border-radius: 20px; margin-bottom: 8px; border: 1px solid rgba(111,162,135,0.12); width: auto; }
     .live-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #6FA287; animation: dotPulse 1.4s ease-in-out infinite; }
     @keyframes dotPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
 
-    /* ===== Mascot ===== */
     .mascot-wrap { position: relative; width: 160px; margin: 0 auto 8px; }
     .mascot-glow { position: absolute; top: 50%; left: 50%; width: 200px; height: 200px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(242,205,107,0.2) 0%, transparent 70%); border-radius: 50%; animation: glowPulse 3s ease-in-out infinite; pointer-events: none; }
     @keyframes glowPulse { 0%,100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.08); } }
-    .mascot-img { position: relative; width: 100%; display: block; cursor: pointer; touch-action: manipulation; -webkit-touch-callout: none; user-select: none; animation: idleFloat 3.2s ease-in-out infinite; }
+    .mascot-img { position: relative; width: 100%; display: block; cursor: pointer; touch-action: manipulation; user-select: none; animation: idleFloat 3.2s ease-in-out infinite; }
     @keyframes idleFloat { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-8px) rotate(1deg); } }
     .mascot-img.bounce { animation: bounce 0.7s ease; }
     @keyframes bounce { 0% { transform: scale(1) translateY(0); } 30% { transform: scale(1.15) translateY(-22px) rotate(-5deg); } 60% { transform: scale(1.05) translateY(-5px) rotate(3deg); } 100% { transform: scale(1) translateY(0) rotate(0deg); } }
@@ -79,19 +52,16 @@
     .mascot-tip { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(243,233,210,0.3); background: rgba(0,0,0,0.4); padding: 3px 14px; border-radius: 20px; white-space: nowrap; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
     .mascot-tip.show { opacity: 1; }
 
-    /* ===== Sparkles ===== */
     .sparkle { position: absolute; font-size: 16px; opacity: 0; pointer-events: none; }
     .sparkle.pop { animation: sparklePop 0.8s ease-out forwards; }
     @keyframes sparklePop { 0% { opacity: 0; transform: scale(0) translate(0,0); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.3) translate(var(--sx), var(--sy)); } }
 
-    /* ===== Level Badge ===== */
     .level-badge { display: flex; flex-direction: column; align-items: center; margin: 2px 0 8px; }
     .level-badge .name { font-size: 18px; font-weight: 700; color: #F2CD6B; }
     .level-badge .xp-bar { width: 160px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 4px; overflow: hidden; }
     .level-badge .xp-bar .fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #C9A03E, #F2CD6B); transition: width 0.8s ease; width: 0%; }
     .level-badge .xp-text { font-size: 11px; color: rgba(243,233,210,0.4); margin-top: 3px; }
 
-    /* ===== Stats Grid ===== */
     .stats-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; width: 100%; max-width: 400px; margin: 4px 0 10px; }
     .stat-card { text-align: center; padding: 14px 6px; }
     .stat-card.main { grid-column: span 1; }
@@ -100,7 +70,6 @@
     .stat-card .label { font-size: 10px; color: rgba(243,233,210,0.4); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-card .icon { font-size: 16px; margin-bottom: 1px; }
 
-    /* ===== Withdraw Section ===== */
     .withdraw-section { width: 100%; max-width: 400px; margin: 4px 0 10px; }
     .withdraw-section .header { display: flex; justify-content: space-between; font-size: 13px; color: rgba(243,233,210,0.5); margin-bottom: 4px; }
     .withdraw-section .header .label { color: #FCE8AE; font-weight: 600; }
@@ -111,10 +80,8 @@
     .withdraw-info .highlight { color: #FCE8AE; font-weight: 600; }
     .withdraw-btn { width: 100%; margin-top: 8px; padding: 10px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; touch-action: manipulation; }
     .withdraw-btn.active { background: linear-gradient(135deg, #C9A03E, #F2CD6B); color: #0A1122; }
-    .withdraw-btn.active:hover { transform: scale(1.02); }
     .withdraw-btn.locked { background: rgba(255,255,255,0.04); color: rgba(243,233,210,0.3); cursor: not-allowed; border: 1px solid rgba(255,255,255,0.06); }
 
-    /* ===== Daily Rewards ===== */
     .daily-grid { display: flex; gap: 5px; justify-content: center; margin: 4px 0 8px; width: 100%; max-width: 400px; }
     .daily-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: rgba(243,233,210,0.25); flex: 1; padding: 3px 0; border-radius: 10px; }
     .daily-item .day { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.03); font-weight: 600; font-size: 12px; transition: all 0.3s; }
@@ -123,9 +90,8 @@
     .daily-item.active .day { background: #F2CD6B; color: #0A1122; box-shadow: 0 0 20px rgba(242,205,107,0.2); animation: dailyPulse 1.2s ease-in-out infinite; }
     @keyframes dailyPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 
-    /* ===== Watch Ad ===== */
     .watch-section { width: 100%; max-width: 400px; padding: 18px; margin: 6px 0 8px; text-align: center; }
-    .watch-section .btn { background: linear-gradient(135deg, #C9A03E, #F2CD6B); color: #0A1122; border: none; padding: 16px 20px; border-radius: 16px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; touch-action: manipulation; width: 100%; position: relative; box-shadow: 0 0 30px rgba(242,205,107,0.08); }
+    .watch-section .btn { background: linear-gradient(135deg, #C9A03E, #F2CD6B); color: #0A1122; border: none; padding: 16px 20px; border-radius: 16px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; touch-action: manipulation; width: 100%; box-shadow: 0 0 30px rgba(242,205,107,0.08); }
     .watch-section .btn:active { transform: scale(0.96); }
     .watch-section .btn.pulse { animation: btnPulse 2s ease-in-out infinite; }
     @keyframes btnPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(242,205,107,0.15); } 50% { box-shadow: 0 0 0 12px rgba(242,205,107,0); } }
@@ -133,7 +99,6 @@
     .watch-section .btn .sub { display: block; font-size: 13px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
     .watch-section .status { margin-top: 10px; font-size: 13px; color: #F2CD6B; }
 
-    /* ===== Tasks ===== */
     .tasks-section { width: 100%; max-width: 400px; padding: 14px 16px; margin: 4px 0 6px; }
     .tasks-section .header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #FCE8AE; margin-bottom: 6px; }
     .task-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
@@ -141,32 +106,28 @@
     .task-item .reward { color: #F2CD6B; font-weight: 600; margin: 0 8px; }
     .task-status { font-size: 10px; padding: 2px 12px; border-radius: 12px; font-weight: 600; }
     .task-status.pending { color: #F2CD6B; background: rgba(242,205,107,0.1); }
-    .task-status.review { color: #E5A06B; background: rgba(229,160,107,0.1); }
     .task-status.done { color: #6FA287; background: rgba(111,162,135,0.12); }
 
-    /* ===== Achievements Bar ===== */
     .achieve-bar { width: 100%; max-width: 400px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 4px 0 6px; }
     .achieve-item { font-size: 11px; color: rgba(243,233,210,0.2); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.04); }
     .achieve-item.done { color: #F2CD6B; border-color: rgba(242,205,107,0.12); background: rgba(242,205,107,0.04); }
 
-    /* ===== Bottom Nav ===== */
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 420px; margin: 0 auto; background: rgba(10,17,34,0.94); backdrop-filter: blur(12px); border-top: 1px solid rgba(242,205,107,0.06); display: flex; padding: 4px 0 env(safe-area-inset-bottom); z-index: 10; }
     .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: none; color: rgba(243,233,210,0.25); font-size: 9px; padding: 6px 0; cursor: pointer; transition: color 0.2s; font-family: inherit; }
     .nav-btn .icon { font-size: 20px; line-height: 1; }
     .nav-btn.active { color: #F2CD6B; }
-    .nav-btn.active .icon { filter: drop-shadow(0 0 8px rgba(242,205,107,0.15)); }
 
-    /* ===== Toast ===== */
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px); background: linear-gradient(135deg, #1c2b52, #131f3d); border: 1px solid rgba(242,205,107,0.3); color: #FCE8AE; padding: 10px 18px; border-radius: 14px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 50; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; pointer-events: none; }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
-    /* ===== Responsive ===== */
     @media (max-width: 380px) { .stats-grid { grid-template-columns: 1fr 1fr; } .stat-card.main { grid-column: span 2; } .stat-card .value { font-size: 18px; } .stat-card.main .value { font-size: 22px; } }
+
+    .loading-shimmer { color: rgba(243,233,210,0.2); animation: shimmer 1.2s ease-in-out infinite; }
+    @keyframes shimmer { 0%,100% { opacity: 0.2; } 50% { opacity: 0.6; } }
   </style>
 </head>
 <body>
 
-  <!-- ===== Splash Screen ===== -->
   <div id="splash">
     <div class="splash-icon">🤖</div>
     <div class="splash-title">Jaib<span>Cash</span></div>
@@ -174,19 +135,12 @@
     <div class="splash-loader"></div>
   </div>
 
-  <!-- ===== Toast ===== -->
-  <div class="toast" id="toast"><span>🏆</span><span id="toastText">First Ad Watched</span></div>
+  <div class="toast" id="toast"><span>🏆</span><span id="toastText">مرحباً بك!</span></div>
 
-  <!-- ===== App ===== -->
   <div class="app" id="app">
+    <div class="welcome">مرحباً، 👋 <span id="userGreeting">جاري التحميل...</span></div>
+    <div class="live-badge"><span class="dot"></span> <span id="liveUsers">جاري التحميل...</span></div>
 
-    <!-- Welcome -->
-    <div class="welcome">مرحباً، أحمد 👋 <span>رصيدك ينمو اليوم</span></div>
-
-    <!-- Live Badge -->
-    <div class="live-badge"><span class="dot"></span> 1,245 مستخدم نشط اليوم</div>
-
-    <!-- Mascot -->
     <div class="mascot-wrap" id="mascotWrap">
       <div class="mascot-glow" id="mascotGlow"></div>
       <span class="sleep-zzz" id="sleepZzz">💤</span>
@@ -194,18 +148,16 @@
       <span class="mascot-tip" id="mascotTip">💡 شاهد إعلاناً لتحصل على 1000 نقطة</span>
     </div>
 
-    <!-- Level Badge -->
     <div class="level-badge">
       <div class="name" id="levelName">🥇 Gold</div>
-      <div class="xp-bar"><div class="fill" id="levelFill" style="width:64%;"></div></div>
-      <div class="xp-text" id="levelXp">12,850 / 50,000 XP</div>
+      <div class="xp-bar"><div class="fill" id="levelFill" style="width:0%;"></div></div>
+      <div class="xp-text" id="levelXp">0 / 0 XP</div>
     </div>
 
-    <!-- Stats Grid -->
     <div class="stats-grid">
       <div class="stat-card main glass">
         <div class="icon">🪙</div>
-        <div class="value" id="balanceDisplay">128,500</div>
+        <div class="value" id="balanceDisplay">0</div>
         <div class="label">رصيدك الحالي</div>
       </div>
       <div class="stat-card glass">
@@ -215,26 +167,23 @@
       </div>
       <div class="stat-card glass">
         <div class="icon">👥</div>
-        <div class="value" id="referralDisplay">12</div>
+        <div class="value" id="referralDisplay">0</div>
         <div class="label">الإحالات</div>
       </div>
     </div>
 
-    <!-- Withdraw Section -->
     <div class="withdraw-section glass">
-      <div class="header"><span>💸 السحب عند 2$</span><span class="label" id="withdrawPercent">6.4%</span></div>
-      <div class="withdraw-bar"><div class="fill" id="withdrawFill" style="width:6.4%;"></div></div>
+      <div class="header"><span>💸 السحب عند 2$</span><span class="label" id="withdrawPercent">0%</span></div>
+      <div class="withdraw-bar"><div class="fill" id="withdrawFill" style="width:0%;"></div></div>
       <div class="withdraw-info">
-        <span>128,500 <span style="color:rgba(243,233,210,0.3);">/ 2,000,000</span></span>
-        <span id="withdrawRemain">1,871,500 متبقي</span>
+        <span id="withdrawBalance">0 <span style="color:rgba(243,233,210,0.3);">/ 2,000,000</span></span>
+        <span id="withdrawRemain">جاري التحميل...</span>
       </div>
       <button class="withdraw-btn locked" id="withdrawBtn">🔒 غير متاح بعد</button>
     </div>
 
-    <!-- Daily Rewards -->
     <div class="daily-grid" id="dailyGrid"></div>
 
-    <!-- Watch Ad -->
     <div class="watch-section glass">
       <button class="btn pulse" id="watchBtn">
         🎥 شاهد إعلان الآن
@@ -243,16 +192,13 @@
       <div class="status" id="statusLine">جاهز للمشاهدة</div>
     </div>
 
-    <!-- Tasks -->
     <div class="tasks-section glass">
-      <div class="header"><span>📋 المهام</span><span style="font-size:11px;color:rgba(243,233,210,0.3);">3 متاحة</span></div>
-      <div id="tasksList"></div>
+      <div class="header"><span>📋 المهام</span><span style="font-size:11px;color:rgba(243,233,210,0.3);" id="tasksCount">جاري التحميل...</span></div>
+      <div id="tasksList"><div class="loading-shimmer">جاري تحميل المهام...</div></div>
     </div>
 
-    <!-- Achievements -->
     <div class="achieve-bar" id="achieveBar"></div>
 
-    <!-- Bottom Nav -->
     <nav class="bottom-nav">
       <button class="nav-btn active" data-view="home"><span class="icon">🏠</span>الرئيسية</button>
       <button class="nav-btn" data-view="tasks"><span class="icon">📋</span>المهام</button>
@@ -263,7 +209,10 @@
   </div>
 
   <script>
-    // ===== Telegram =====
+    // ===== API Configuration =====
+    const API_BASE = "https://jaibcash-production.up.railway.app";
+    const USER_ID = 1488610580;
+
     const tg = window.Telegram?.WebApp;
     if (tg) { tg.ready(); tg.expand(); }
 
@@ -273,14 +222,17 @@
     const mascot = document.getElementById('mascotImg');
     const mascotWrap = document.getElementById('mascotWrap');
     const mascotGlow = document.getElementById('mascotGlow');
-    const mascotTip = document.getElementById('mascotTip');
     const sleepZzz = document.getElementById('sleepZzz');
+    const mascotTip = document.getElementById('mascotTip');
     const balanceDisplay = document.getElementById('balanceDisplay');
+    const advertiserDisplay = document.getElementById('advertiserDisplay');
+    const referralDisplay = document.getElementById('referralDisplay');
     const levelName = document.getElementById('levelName');
     const levelFill = document.getElementById('levelFill');
     const levelXp = document.getElementById('levelXp');
     const withdrawFill = document.getElementById('withdrawFill');
     const withdrawPercent = document.getElementById('withdrawPercent');
+    const withdrawBalance = document.getElementById('withdrawBalance');
     const withdrawRemain = document.getElementById('withdrawRemain');
     const withdrawBtn = document.getElementById('withdrawBtn');
     const statusLine = document.getElementById('statusLine');
@@ -289,16 +241,23 @@
     const toastText = document.getElementById('toastText');
     const dailyGrid = document.getElementById('dailyGrid');
     const tasksList = document.getElementById('tasksList');
+    const tasksCount = document.getElementById('tasksCount');
     const achieveBar = document.getElementById('achieveBar');
+    const userGreeting = document.getElementById('userGreeting');
+    const liveUsers = document.getElementById('liveUsers');
 
     // ===== State =====
-    let balance = 128500;
+    let balance = 0;
     const THRESHOLD = 2000000;
     let cooldownActive = false;
-    let streak = 3;
+    let streak = 0;
 
     // ===== Splash =====
-    setTimeout(() => { splash.classList.add('hide'); app.classList.add('show'); setTimeout(() => splash.remove(), 600); }, 1500);
+    setTimeout(() => {
+      splash.classList.add('hide');
+      app.classList.add('show');
+      setTimeout(() => splash.remove(), 600);
+    }, 1500);
 
     // ===== Particles =====
     for (let i = 0; i < 14; i++) {
@@ -309,7 +268,7 @@
       document.body.appendChild(p);
     }
 
-    // ===== Mascot =====
+    // ===== Mascot Functions =====
     function mascotBounce() { mascot.classList.remove('bounce'); void mascot.offsetWidth; mascot.classList.add('bounce'); setTimeout(() => mascot.classList.remove('bounce'), 700); }
     function mascotCelebrate() { mascot.classList.remove('celebrate'); void mascot.offsetWidth; mascot.classList.add('celebrate'); spawnSparkles(); setTimeout(() => mascot.classList.remove('celebrate'), 900); }
     function mascotBlink() { mascot.classList.add('blink'); setTimeout(() => mascot.classList.remove('blink'), 120); }
@@ -332,19 +291,68 @@
 
     mascot.addEventListener('click', (e) => { e.preventDefault(); if (!cooldownActive) { mascotBounce(); if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light'); } });
 
-    // ===== Random Blink =====
     setInterval(() => { if (Math.random() > 0.6 && !cooldownActive) mascotBlink(); }, 5000);
-
-    // ===== Mascot Tip =====
     setTimeout(() => mascotTip.classList.add('show'), 3000);
     setInterval(() => { mascotTip.classList.remove('show'); setTimeout(() => mascotTip.classList.add('show'), 4000); }, 8000);
 
+    // ===== Toast =====
+    function showToast(text) { toastText.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
+
+    // ===== API Functions =====
+    async function fetchProfile() {
+      try {
+        const res = await fetch(`${API_BASE}/api/profile?user_id=${USER_ID}`);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        console.error('Failed to fetch profile:', e);
+        return null;
+      }
+    }
+
+    async function watchAd() {
+      try {
+        const res = await fetch(`${API_BASE}/api/watch-ad`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: USER_ID })
+        });
+        if (!res.ok) throw new Error('API error');
+        return await res.json();
+      } catch (e) {
+        console.error('Failed to watch ad:', e);
+        return null;
+      }
+    }
+
+    async function fetchTasks() {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks?user_id=${USER_ID}`);
+        if (!res.ok) throw new Error('API error');
+        return await res.json();
+      } catch (e) {
+        console.error('Failed to fetch tasks:', e);
+        return [];
+      }
+    }
+
     // ===== Update UI =====
-    function updateUI() {
+    function updateUI(data) {
+      if (!data) return;
+      balance = data.balance || 0;
+      const referrals = data.referrals || 0;
+      const advBalance = data.advertiser_balance || 0;
+
+      balanceDisplay.textContent = balance.toLocaleString();
+      advertiserDisplay.textContent = advBalance.toLocaleString();
+      referralDisplay.textContent = referrals.toLocaleString();
+
       const pct = Math.min(100, (balance / THRESHOLD) * 100);
       withdrawFill.style.width = pct + '%';
       withdrawPercent.textContent = pct.toFixed(1) + '%';
       const remain = Math.max(0, THRESHOLD - balance);
+      withdrawBalance.textContent = balance.toLocaleString();
       withdrawRemain.textContent = remain.toLocaleString() + ' متبقي';
 
       if (pct >= 100) { withdrawFill.classList.add('done'); withdrawBtn.textContent = '💸 طلب سحب'; withdrawBtn.className = 'withdraw-btn active'; }
@@ -359,72 +367,63 @@
         { name: '🚀 Master', min: 1000000, next: 2000000 },
         { name: '🔥 Legendary', min: 2000000, next: 999999999 }
       ];
-      let current = levels[0], next = levels[1];
-      for (const l of levels) { if (balance >= l.min) { current = l; } }
-      const nextLevel = levels[Math.min(levels.indexOf(current) + 1, levels.length - 1)];
+      let current = levels[0];
+      for (const l of levels) { if (balance >= l.min) current = l; }
+      const idx = levels.indexOf(current);
+      const nextLevel = levels[Math.min(idx + 1, levels.length - 1)];
       const xp = balance - current.min;
       const xpNeeded = nextLevel.min - current.min;
-      const xpPct = Math.min(100, (xp / xpNeeded) * 100);
+      const xpPct = xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 100;
       levelName.textContent = current.name;
       levelFill.style.width = xpPct + '%';
       levelXp.textContent = balance.toLocaleString() + ' / ' + nextLevel.min.toLocaleString() + ' XP';
 
-      document.getElementById('advertiserDisplay').textContent = '0';
-      document.getElementById('referralDisplay').textContent = '12';
+      userGreeting.textContent = 'رصيدك ' + balance.toLocaleString() + ' نقطة';
+    }
 
-      // Daily
+    function updateDaily() {
       dailyGrid.innerHTML = '';
       const days = [100, 150, 250, 400, 600, 900, 1500];
+      const streakDays = Math.min(7, Math.floor(balance / 1000) + 1);
       days.forEach((amt, i) => {
         const d = document.createElement('div'); d.className = 'daily-item';
-        if (i < streak) d.classList.add('done');
-        if (i === streak) d.classList.add('active');
+        if (i < streakDays) d.classList.add('done');
+        if (i === streakDays && i < 7) d.classList.add('active');
         d.innerHTML = `<span class="day">${i+1}</span><span class="amount">${amt}</span>`;
         dailyGrid.appendChild(d);
       });
+    }
 
-      // Tasks
-      const tasks = [
-        { name: 'مشاهدة إعلان', reward: 1000, status: 'pending' },
-        { name: 'دعوة صديق', reward: 1500, status: 'pending' },
-        { name: 'الاشتراك بالقناة', reward: 500, status: 'done' }
-      ];
+    function updateTasks(tasks) {
+      if (!tasks || tasks.length === 0) {
+        tasksList.innerHTML = '<div style="color:rgba(243,233,210,0.3);font-size:13px;">لا توجد مهام متاحة</div>';
+        tasksCount.textContent = '0 متاحة';
+        return;
+      }
+      tasksCount.textContent = tasks.length + ' متاحة';
       tasksList.innerHTML = tasks.map(t => `
         <div class="task-item">
-          <span>${t.name}</span>
-          <span class="reward">+${t.reward}</span>
-          <span class="task-status ${t.status}">${t.status === 'pending' ? 'قيد الانتظار' : t.status === 'review' ? 'مراجعة' : 'مكتمل'}</span>
+          <span>${t.name || 'مهمة'}</span>
+          <span class="reward">+${t.reward || 0}</span>
+          <span class="task-status ${t.status || 'pending'}">${t.status === 'done' ? 'مكتمل' : 'قيد الانتظار'}</span>
         </div>
       `).join('');
+    }
 
-      // Achievements
+    function updateAchievements() {
       const achievements = ['أول إعلان', 'أول إحالة', 'أول 10,000 نقطة'];
-      const done = ['أول إعلان', 'أول إحالة'];
+      const done = balance > 0 ? ['أول إعلان'] : [];
+      if (balance > 10000) done.push('أول 10,000 نقطة');
       achieveBar.innerHTML = achievements.map(a =>
         `<span class="achieve-item ${done.includes(a) ? 'done' : ''}">${done.includes(a) ? '✅' : '⬜'} ${a}</span>`
       ).join('');
     }
 
-    // ===== Animate Balance =====
-    function animateBalance(from, to, duration) {
-      const start = performance.now();
-      function step(now) {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(from + (to - from) * eased);
-        balanceDisplay.textContent = current.toLocaleString();
-        if (progress < 1) requestAnimationFrame(step);
-        else { balanceDisplay.textContent = to.toLocaleString(); updateUI(); }
-      }
-      requestAnimationFrame(step);
-    }
-
-    function showToast(text) { toastText.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
-
     // ===== Watch Ad =====
-    watchBtn.addEventListener('click', function(e) {
+    watchBtn.addEventListener('click', async function(e) {
       e.preventDefault();
       if (cooldownActive) return;
+
       cooldownActive = true;
       watchBtn.disabled = true;
       watchBtn.classList.remove('pulse');
@@ -433,27 +432,44 @@
       mascotBounce();
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
-      setTimeout(() => {
-        const old = balance; balance += 1000;
-        animateBalance(old, balance, 900);
-        statusLine.textContent = '✅ +1000 نقطة!';
+      const result = await watchAd();
+      if (result && result.success) {
+        balance = result.balance;
+        updateUI({ balance, referrals: 0, advertiser_balance: 0 });
+        updateDaily();
+        updateAchievements();
+        statusLine.textContent = '✅ +' + result.points + ' نقطة!';
         statusLine.style.color = '#6FA287';
         mascotCelebrate();
         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        let remaining = 15;
-        const interval = setInterval(() => {
-          remaining--;
-          if (remaining > 0) { watchBtn.textContent = `⏳ ${remaining} ث`; }
-          else {
-            clearInterval(interval);
-            watchBtn.textContent = '🎥 شاهد إعلان الآن'; watchBtn.innerHTML = '🎥 شاهد إعلان الآن<span class="sub">+1000 نقطة</span>';
-            watchBtn.disabled = false; watchBtn.classList.add('pulse');
-            statusLine.textContent = 'جاهز للمشاهدة'; statusLine.style.color = '#F2CD6B';
-            cooldownActive = false; exitSleep();
-          }
-        }, 1000);
-        setTimeout(enterSleep, 1200);
-      }, 2000);
+        showToast('🎉 حصلت على ' + result.points + ' نقطة!');
+      } else {
+        statusLine.textContent = '❌ حدث خطأ، حاول مجدداً';
+        statusLine.style.color = '#C1684A';
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+      }
+
+      let remaining = 15;
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining > 0) { watchBtn.textContent = `⏳ ${remaining} ث`; }
+        else {
+          clearInterval(interval);
+          watchBtn.innerHTML = '🎥 شاهد إعلان الآن<span class="sub">+1000 نقطة</span>';
+          watchBtn.disabled = false; watchBtn.classList.add('pulse');
+          statusLine.textContent = 'جاهز للمشاهدة'; statusLine.style.color = '#F2CD6B';
+          cooldownActive = false; exitSleep();
+        }
+      }, 1000);
+      setTimeout(enterSleep, 1200);
+    });
+
+    // ===== Withdraw =====
+    withdrawBtn.addEventListener('click', () => {
+      if (withdrawBtn.classList.contains('active')) {
+        showToast('💸 جاري تجهيز طلب السحب...');
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      }
     });
 
     // ===== Nav =====
@@ -466,18 +482,22 @@
       });
     });
 
-    // ===== Withdraw =====
-    withdrawBtn.addEventListener('click', () => {
-      if (withdrawBtn.classList.contains('active')) {
-        showToast('💸 جاري تجهيز طلب السحب...');
-        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      }
-    });
-
     // ===== Init =====
-    balanceDisplay.textContent = balance.toLocaleString();
-    updateUI();
-    console.log('JaibCash UI v2.0 loaded');
+    async function init() {
+      const data = await fetchProfile();
+      if (data) {
+        updateUI(data);
+        updateDaily();
+        updateAchievements();
+      }
+      const tasks = await fetchTasks();
+      updateTasks(tasks);
+      liveUsers.textContent = Math.floor(Math.random() * 500 + 500) + ' مستخدم نشط اليوم';
+      showToast('👋 مرحباً بك في JaibCash!');
+    }
+
+    init();
+    console.log('JaibCash Mini App with API v1.0 loaded');
   </script>
 
 </body>
