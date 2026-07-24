@@ -31,18 +31,26 @@ from api_routes import api_bp
 # ===== خادم ويب صغير لـ Healthcheck =====
 web_app = Flask(__name__)
 
+@web_app.route("/")
+def index():
+    try:
+        return send_file("public/miniapp.html")
+    except Exception:
+        return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
+
 # ===== تسجيل Blueprint API =====
 web_app.register_blueprint(api_bp)
 
-@web_app.route('/')
 def index():
-    return jsonify({"status": "running", "service": "JaibCash Bot"}), 200
+        try:
+        return send_file("public/miniapp.html")
+    except Exception:
+        return jsonify({"status": "running", "service": "JaibCash Bot"}), 200, 200
 
 @web_app.route('/health')
 def health():
     return jsonify({"status": "ok"}), 200
 
-@web_app.route('/')
 def serve_miniapp():
     try:
         return send_file("public/miniapp.html")
